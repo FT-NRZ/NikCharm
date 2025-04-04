@@ -1,0 +1,94 @@
+{
+    "products": [
+      {
+        "id": 1,
+        "name": "کیف دستی زنانه لوکس",
+        "category": "زنانه",
+        "material": "چرم اصل",
+        "color": "مشکی",
+        "price": 950000,
+        "dimensions": {
+          "length": 28,
+          "width": 18,
+          "height": 12
+        },
+        "images": [
+          "https://via.placeholder.com/400x300?text=Luxury+Women+Bag",
+          "https://via.placeholder.com/400x300?text=Interior"
+        ],
+        "productCode": "WF-LX01"
+      },
+      {
+        "id": 2,
+        "name": "کیف کمری مردانه چرم گاوی",
+        "category": "مردانه",
+        "material": "چرم گاوی",
+        "color": "قهوه‌ای تیره",
+        "price": 680000,
+        "dimensions": {
+          "length": 42,
+          "width": 5,
+          "height": 25
+        },
+        "images": [
+          "https://via.placeholder.com/400x300?text=Mens+Waist+Bag",
+          "https://via.placeholder.com/400x300?text=Strap+Detail"
+        ],
+        "productCode": "MM-WB02"
+      },
+      {
+        "id": 3,
+        "name": "دستبند چرمی دو رنگ",
+        "category": "اکسسوری چرمی",
+        "material": "چرم مصنوعی",
+        "color": "دو رنگ (مشکی+قهوه‌ای)",
+        "price": 180000,
+        "dimensions": {
+          "length": 19,
+          "width": 2,
+          "height": 0.3
+        },
+        "images": [
+          "https://via.placeholder.com/400x300?text=Two-Tone+Bracelet",
+          "https://via.placeholder.com/400x300?text=Clasp+Detail"
+        ],
+        "productCode": "AC-BR03"
+      },
+      {
+        "id": 4,
+        "name": "کیف اداری حرفهای",
+        "category": "مردانه",
+        "material": "چرم اصل",
+        "color": "جیگری",
+        "price": 1450000,
+        "dimensions": {
+          "length": 40,
+          "width": 30,
+          "height": 15
+        },
+        "images": [
+          "https://via.placeholder.com/400x300?text=Pro+Briefcase",
+          "https://via.placeholder.com/400x300?text=Inside+Compartments"
+        ],
+        "productCode": "MM-PB04"
+      },
+      {
+        "id": 5,
+        "name": "کیف پول زنانه مینیاتوری",
+        "category": "زنانه",
+        "material": "چرم گاوی",
+        "color": "صورتی",
+        "price": 320000,
+        "dimensions": {
+          "length": 12,
+          "width": 8,
+          "height": 2
+        },
+        "images": [
+          "https://via.placeholder.com/400x300?text=Mini+Wallet",
+          "https://via.placeholder.com/400x300?text=Card+Slots"
+        ],
+        "productCode": "WF-MW05"
+      }
+    ]
+  }

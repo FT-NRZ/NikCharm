@@ -4,6 +4,7 @@ import Link from "next/link";
 import { HiOutlineShoppingBag, HiOutlineUser, HiOutlineMagnifyingGlass, HiOutlineHeart } from "react-icons/hi2";
 import { useState, useEffect } from "react";
 import logo from "./assets/Frame 1.svg";
+import { Icon } from "@iconify/react";
 
 const Header = ({ onLoginClick }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -20,14 +21,14 @@ const Header = ({ onLoginClick }) => {
   return (
     <header className={`
       bg-white
-      fixed top-0 left-0 right-0 z-50 
+       top-0 left-0 right-0 z-50 
       transition-all duration-300 
       ${isScrolled ? 'shadow-md py-2' : 'py-3'}
       border-b border-gray-100
     `}>
-      <div className="container mx-auto flex justify-between items-center px-4 md:px-6">
+      <div className="container mx-auto flex justify-center md:justify-between items-center md:px-6">
         {/* Left Section (User Menu) */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="hidden md:flex items-center gap-3 md:gap-4">
           {/* Login Button */}
           <button
             onClick={onLoginClick}
@@ -136,63 +137,6 @@ const Header = ({ onLoginClick }) => {
           </Link>
         </div>
         
-        {/* Search Bar */}
-        <div className="relative w-1/2 lg:w-5/12 group">
-          <input
-            type="text"
-            placeholder="جستجوی محصولات..."
-            dir="rtl"
-            className="
-              w-full 
-              p-3 
-              pl-12 
-              pr-4 
-              rounded-xl
-              bg-gray-50
-              border 
-              border-gray-200 
-              focus:border-[#800020] 
-              focus:ring-2
-              focus:ring-[#800020]/20 
-              focus:outline-none 
-              transition-all 
-              duration-300 
-              shadow-sm 
-              hover:shadow
-              text-right
-              placeholder-gray-400
-              text-sm
-            "
-          />
-          <div className="
-            absolute 
-            left-3 
-            top-3 
-            text-gray-400
-            transition-all 
-            duration-300 
-            group-hover:text-[#800020]
-          ">
-            <HiOutlineMagnifyingGlass size={20} />
-          </div>
-          
-          {/* Search Bar Subtle Glow Effect */}
-          <div className="
-            absolute 
-            inset-0 
-            -z-10 
-            rounded-xl
-            blur-sm 
-            opacity-0 
-            group-hover:opacity-100 
-            transition-opacity 
-            duration-300
-            bg-gradient-to-r 
-            from-[#800020]/5 
-            to-transparent
-          "></div>
-        </div>
-        
         {/* Logo (Right Side) */}
         <Link href="/" className="relative group overflow-hidden">
           <div className="relative flex items-center">
@@ -202,28 +146,10 @@ const Header = ({ onLoginClick }) => {
               width={110} 
               height={55} 
               priority 
-              className="
-                transition-all 
-                duration-500 
-                group-hover:scale-105
-                object-contain
-                h-10 md:h-12
-              " 
+              className="transition-all duration-500 group-hover:scale-105 object-contain h-10 md:h-12 " 
             />
-            
             {/* Logo Hover Effect */}
-            <div className="
-              absolute 
-              -bottom-1 
-              left-0 
-              w-full 
-              h-0.5 
-              bg-[#800020] 
-              scale-x-0 
-              group-hover:scale-x-100 
-              transition-transform 
-              duration-300
-            "></div>
+            <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#800020] scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
           </div>
         </Link>
       </div>
