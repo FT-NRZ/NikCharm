@@ -14,9 +14,9 @@ export default function Navbar() {
   const searchRef = useRef(null);
 
   const menuItems = [
-    { title: 'محصولات زنانه', href: '/products?category=women' },
-    { title: 'محصولات مردانه', href: '/products?category=men' },
-    { title: 'اکسسوری‌ها', href: '/products?category=accessories' },
+    { title: 'محصولات زنانه', href: '/products?category=1' },
+    { title: 'محصولات مردانه', href: '/products?category=2' },
+    { title: 'اکسسوری‌ها', href: '/products?category=3' },
   ];
 
   useEffect(() => {
@@ -103,12 +103,12 @@ export default function Navbar() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute right-0 text-right w-48 mt-3 py-2 bg-white rounded-md shadow-xl"
+                        className="absolute right-0 text-right w-48 mt-3 py-2 bg-white rounded-md shadow-xl z-50"
                       >
                         {menuItems.map((item) => (
                           <Link
                             key={item.href}
-                            href={item.href}
+                            href={item.href} // Navigate to the products page with the category filter
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#8B0000]"
                           >
                             {item.title}

@@ -1,94 +1,213 @@
 {
-    "products": [
-      {
-        "id": 1,
-        "name": "کیف دستی زنانه لوکس",
-        "category": "زنانه",
-        "material": "چرم اصل",
-        "color": "مشکی",
-        "price": 950000,
-        "dimensions": {
-          "length": 28,
-          "width": 18,
-          "height": 12
-        },
-        "images": [
-          "https://via.placeholder.com/400x300?text=Luxury+Women+Bag",
-          "https://via.placeholder.com/400x300?text=Interior"
-        ],
-        "productCode": "WF-LX01"
+  "products": [
+    {
+      "id": 1,
+      "name": "کیف دستی زنانه",
+      "categoryIds": [
+        1
+      ],
+      "material": "چرم اصل",
+      "color": "مشکی",
+      "isOnSale": true,
+      "isBestSelling": true,
+      "discountPercent": 20,
+      "originalPrice": 950000,
+      "price": 760000,
+      "dimensions": {
+        "length": 28,
+        "width": 18,
+        "height": 12
       },
-      {
-        "id": 2,
-        "name": "کیف کمری مردانه چرم گاوی",
-        "category": "مردانه",
-        "material": "چرم گاوی",
-        "color": "قهوه‌ای تیره",
-        "price": 680000,
-        "dimensions": {
-          "length": 42,
-          "width": 5,
-          "height": 25
-        },
-        "images": [
-          "https://via.placeholder.com/400x300?text=Mens+Waist+Bag",
-          "https://via.placeholder.com/400x300?text=Strap+Detail"
-        ],
-        "productCode": "MM-WB02"
+      "images": [
+        "/pic1.jpg"
+      ],
+      "productCode": "WF-LX01",
+      "description": "کیفی شیک و مناسب برای استفاده روزمره",
+      "createdAt": "2025-04-06T14:27:39.494Z",
+      "mainImage": "/pic1.jpg"
+    },
+    {
+      "id": 2,
+      "name": "کمربند چرمی مردانه",
+      "categoryIds": [
+        3
+      ],
+      "material": "چرم طبیعی",
+      "color": "مشکی",
+      "isOnSale": true,
+      "isBestSelling": true,
+      "discountPercent": 10,
+      "originalPrice": 950000,
+      "price": 500000,
+      "dimensions": {
+        "length": 42,
+        "width": 5,
+        "height": 25
       },
-      {
-        "id": 3,
-        "name": "دستبند چرمی دو رنگ",
-        "category": "اکسسوری چرمی",
-        "material": "چرم مصنوعی",
-        "color": "دو رنگ (مشکی+قهوه‌ای)",
-        "price": 180000,
-        "dimensions": {
-          "length": 19,
-          "width": 2,
-          "height": 0.3
-        },
-        "images": [
-          "https://via.placeholder.com/400x300?text=Two-Tone+Bracelet",
-          "https://via.placeholder.com/400x300?text=Clasp+Detail"
-        ],
-        "productCode": "AC-BR03"
+      "images": [
+        "/pic2.jpg",
+        "blob:http://localhost:3000/48916b00-8f11-4eeb-98e4-dee032fecf3f"
+      ],
+      "productCode": "MM-WB02",
+      "description": "کمربندی با دوام و شیک برای استفاده روزمره",
+      "createdAt": "2025-04-06T14:27:39.494Z",
+      "mainImage": "/pic2.jpg"
+    },
+    {
+      "id": 3,
+      "name": "دستبند چرمی دو رنگ",
+      "categoryIds": [
+        3
+      ],
+      "material": "چرم مصنوعی",
+      "color": "دو رنگ (مشکی+قهوه‌ای)",
+      "isOnSale": true,
+      "isBestSelling": true,
+      "discountPercent": 30,
+      "originalPrice": 950000,
+      "price": 620000,
+      "dimensions": {
+        "length": 19,
+        "width": 2,
+        "height": 0.3
       },
-      {
-        "id": 4,
-        "name": "کیف اداری حرفهای",
-        "category": "مردانه",
-        "material": "چرم اصل",
-        "color": "جیگری",
-        "price": 1450000,
-        "dimensions": {
-          "length": 40,
-          "width": 30,
-          "height": 15
-        },
-        "images": [
-          "https://via.placeholder.com/400x300?text=Pro+Briefcase",
-          "https://via.placeholder.com/400x300?text=Inside+Compartments"
-        ],
-        "productCode": "MM-PB04"
+      "images": [
+        "/pic3.jpg"
+      ],
+      "productCode": "AC-BR03",
+      "description": "دستبندی زیبا و مناسب برای هدیه",
+      "createdAt": "2025-04-06T14:27:39.494Z"
+    },
+    {
+      "id": 4,
+      "name": "کیف اداری حرفه ای",
+      "categoryIds": [
+        2,
+        1
+      ],
+      "material": "چرم اصل",
+      "color": "جیگری",
+      "isOnSale": true,
+      "isBestSelling": true,
+      "discountPercent": 20,
+      "originalPrice": 950000,
+      "price": 760000,
+      "dimensions": {
+        "length": 40,
+        "width": 30,
+        "height": 15
       },
-      {
-        "id": 5,
-        "name": "کیف پول زنانه مینیاتوری",
-        "category": "زنانه",
-        "material": "چرم گاوی",
-        "color": "صورتی",
-        "price": 320000,
-        "dimensions": {
-          "length": 12,
-          "width": 8,
-          "height": 2
-        },
-        "images": [
-          "https://via.placeholder.com/400x300?text=Mini+Wallet",
-          "https://via.placeholder.com/400x300?text=Card+Slots"
-        ],
-        "productCode": "WF-MW05"
-      }
-    ]
-  }
+      "images": [
+        "/pic4.jpg",
+        "blob:http://localhost:3000/2dc88756-8dc9-4b36-9099-f449a4ba0421"
+      ],
+      "productCode": "MM-PB04",
+      "description": "کیفی مناسب برای جلسات کاری و حرفه‌ای",
+      "createdAt": "2025-04-06T14:27:39.494Z",
+      "mainImage": "blob:http://localhost:3000/2dc88756-8dc9-4b36-9099-f449a4ba0421"
+    },
+    {
+      "id": 5,
+      "name": "کیف پول زنانه مینیاتوری",
+      "categoryIds": [
+        1,
+        3
+      ],
+      "material": "چرم گاوی",
+      "color": "صورتی",
+      "isOnSale": true,
+      "isBestSelling": true,
+      "discountPercent": 5,
+      "originalPrice": 950000,
+      "price": 900000,
+      "dimensions": {
+        "length": 12,
+        "width": 8,
+        "height": 2
+      },
+      "images": [
+        "/pic5.jpg"
+      ],
+      "productCode": "WF-MW05",
+      "description": "کیفی کوچک و زیبا برای استفاده روزمره",
+      "createdAt": "2025-04-06T14:27:39.494Z"
+    },
+    {
+      "id": 6,
+      "name": "کیف چرم دوشی",
+      "categoryIds": [
+        1
+      ],
+      "material": "چرم مصنوعی",
+      "color": "مشکی",
+      "isOnSale": false,
+      "isBestSelling": false,
+      "discountPercent": 0,
+      "originalPrice": 560000,
+      "price": 560000,
+      "dimensions": {
+        "length": 50,
+        "width": 60,
+        "height": 15
+      },
+      "images": [
+        "/pic3.jpg"
+      ],
+      "productCode": "WF-SB06",
+      "description": "کیفی جا دار و راحت برای استفاده روزمره شما",
+      "createdAt": "2025-04-06T14:27:39.494Z"
+    },
+    {
+      "id": 7,
+      "name": "کیف پول جیبی",
+      "categoryIds": [
+        2,
+        3
+      ],
+      "material": "چرم طبیعی",
+      "color": "جیگری",
+      "isOnSale": true,
+      "isBestSelling": false,
+      "discountPercent": 30,
+      "originalPrice": 600000,
+      "price": 600000,
+      "dimensions": {
+        "length": 30,
+        "width": 50,
+        "height": 10
+      },
+      "images": [
+        "/pic4.jpg"
+      ],
+      "productCode": "MM-WL07",
+      "description": "کیفی مناسب هر جیب کوچک و بزرگ",
+      "createdAt": "2025-04-06T14:27:39.494Z"
+    },
+    {
+      "id": 1744882449638,
+      "name": "کیف زنانه دوشی",
+      "categoryIds": [
+        1
+      ],
+      "material": "چرم طبیعی",
+      "color": "جیگری",
+      "originalPrice": 820000,
+      "discountPercent": 15,
+      "dimensions": {
+        "length": 10,
+        "width": 40,
+        "height": 30
+      },
+      "description": "کیفی مناسب برای مجالس و دورهمی ها",
+      "images": [
+        "/pic5.jpg",
+        "/pic3.jpg"
+      ],
+      "isOnSale": true,
+      "isBestSelling": false,
+      "productCode": "",
+      "price": 697000,
+      "createdAt": "2025-04-17T09:34:09.638Z"
+    }
+  ]
+}

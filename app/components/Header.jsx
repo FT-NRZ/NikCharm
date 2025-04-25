@@ -3,10 +3,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { HiOutlineShoppingBag, HiOutlineUser, HiOutlineMagnifyingGlass, HiOutlineHeart } from "react-icons/hi2";
 import { useState, useEffect } from "react";
-import logo from "./assets/Frame 1.svg";
+import logo from "../../public/Logo.svg";
 import { Icon } from "@iconify/react";
+import { useRouter } from "next/navigation";
 
-const Header = ({ onLoginClick }) => {
+const Header = () => {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   
   useEffect(() => {
@@ -31,7 +33,7 @@ const Header = ({ onLoginClick }) => {
         <div className="hidden md:flex items-center gap-3 md:gap-4">
           {/* Login Button */}
           <button
-            onClick={onLoginClick}
+            onClick={() => {router.push("/login");}}
             className="
               flex items-center gap-1.5
               bg-white 

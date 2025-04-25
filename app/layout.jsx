@@ -1,29 +1,16 @@
-'use client';
-
+// app/layout.js
 import './globals.css';
-import { useState } from 'react';
-import Header from './components/Header';
-import Navbar from './components/Navbar';
-import LoginSignup from './components/Login';
-import HomePage from './components/homepage';
+import HeaderHandler from './components/HeaderHandler';
 
 export default function RootLayout({ children }) {
-  const [showLogin, setShowLogin] = useState(false);
-
-  const toggleLogin = () => {
-    setShowLogin(!showLogin);
-  };
-
   return (
     <html lang="fa">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      </head>
       <body>
-        <div>
-        <Header onLoginClick={toggleLogin} />
-        <Navbar />
-        </div>
-        {showLogin && <LoginSignup />}
+        <HeaderHandler />
         {children}
-        
       </body>
     </html>
   );
