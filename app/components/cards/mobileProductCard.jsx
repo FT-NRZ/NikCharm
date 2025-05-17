@@ -34,7 +34,7 @@ const LeatherProductCard = React.memo(({ product }) => {
           </div>
 
           <p className="text-[17px] font-extrabold text-blue-600 mt-2">
-            {product.price.toLocaleString('fa-IR')} تومان
+            {product.price.toLocaleString()} تومان
           </p>
         </div>
       </div>

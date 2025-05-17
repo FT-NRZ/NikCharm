@@ -80,7 +80,7 @@ export default function ProductComments({ productId }) {
             </div>
             <p className="text-gray-700">{comment.comment}</p>
             <time className="text-sm text-gray-500">
-              {new Date(comment.date).toLocaleDateString('fa-IR')}
+              {new Date(comment.date).toLocaleDateString()}
             </time>
           </div>
         ))}
