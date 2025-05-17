@@ -8,18 +8,17 @@ export default function CategoriesCircle() {
   const [products, setProducts] = useState([]);
   const router = useRouter(); // Initialize useRouter
 
-  useEffect(() => {
-    // Fetch categories.json
-    async function fetchCategories() {
-      try {
-        const res = await fetch('/api/categories');
-        if (!res.ok) throw new Error('Failed to fetch categories');
-        const data = await res.json();
-        setCategories(data.categories || []);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
+    useEffect(() => {
+      async function fetchCategories() {
+        try {
+          const res = await fetch('/api/categories');
+          if (!res.ok) throw new Error('Failed to fetch categories');
+          const data = await res.json();
+          setCategories(data || []); // اینجا تغییر دادم
+        } catch (error) {
+          console.error('Error fetching categories:', error);
+        }
       }
-    }
 
     // Fetch products.json
     async function fetchProducts() {
@@ -38,10 +37,16 @@ export default function CategoriesCircle() {
   }, []);
 
   // Get a product image for each category
-  const getCategoryImage = (categoryId) => {
-    const product = products.find((product) => product.categoryIds.includes(categoryId));
-    return product ? product.images[0] : '/placeholder.jpg'; // Fallback to a placeholder image
-  };
+  // Get a product image for each category
+const getCategoryImage = (categoryId) => {
+  const product = products.find(
+    (product) =>
+      Array.isArray(product.categoryIds) &&
+      product.categoryIds.includes(categoryId)
+  );
+  return product ? product.images[0] : '/placeholder.jpg';
+};
+
 
   // Handle category click
   const handleCategoryClick = (categoryId) => {
