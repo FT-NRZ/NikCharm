@@ -11,7 +11,6 @@ import {
 import productsData from '../data/products.json';
 import commentsData from '../data/comments.json'; // Import comments data
 import Header from '../components/Header';
-import Navbar from '../components/Navbar';
 import ProductComments from '../components/comments/ProductComments'; // Import ProductComments
 export default function ProductView() {
   const [product, setProduct] = useState(null);
@@ -57,11 +56,14 @@ export default function ProductView() {
   if (!product) {
     return <div className="text-center py-8 text-gray-600">در حال بارگذاری...</div>;
   }
-
+ 
   return (
-    <div dir="rtl" className='pb-16'>
-      <Header />
-      <Navbar />
+    <div dir="rtl" className='pb-16' >
+      <div dir='rtl'>
+        <Header />
+      </div>
+      
+      
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">

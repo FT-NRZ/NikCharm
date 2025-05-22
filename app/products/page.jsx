@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation"; // Import useSearchParams
 import productsData from "../data/products.json"; // Import products data
 import categoriesData from "../data/categories.json"; // Import categories data
 import ProductCard from "../components/cards/ProductCard";
-import Navbar from "../components/Navbar"; // Import Navbar component
 import Header from "../components/Header"; // Import Header component
 import { AnimatePresence, motion } from "framer-motion";
 import MobileProductCard from "../components/cards/mobileProductCard";
