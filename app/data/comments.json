@@ -1,121 +1,13 @@
 {
   "comments": [
     {
-      "id": 1,
-      "productId": 1,
-      "name": "سارا محمدی",
-      "email": "sara@example.com",
-      "rating": 5,
-      "comment": "کیف بسیار شیک و باکیفیت. کاملا راضی هستم.",
-      "date": "2024-05-15"
-    },
-    {
-      "id": 2,
-      "productId": 1,
-      "name": "ناشناس",
-      "email": "",
-      "rating": 4,
-      "comment": "رنگ مشکی خیلی قشنگه اما کمی گرونه.",
-      "date": "2024-05-16"
-    },
-    {
-      "id": 3,
-      "productId": 2,
-      "name": "علی رضایی",
-      "email": "ali@example.com",
-      "rating": 4,
-      "comment": "کمربند محکم و با دوام. توصیه می کنم.",
-      "date": "2024-05-14"
-    },
-    {
-      "id": 4,
-      "productId": 3,
-      "name": "فاطمه کریمی",
-      "email": "fatemeh@example.com",
-      "rating": 5,
-      "comment": "دستبند زیبا و با قیمت مناسب، کیفیت خوبی داره.",
-      "date": "2024-05-13"
-    },
-    {
-      "id": 5,
-      "productId": 4,
-      "name": "محمد جوادی",
-      "email": "mohammad@example.com",
-      "rating": 3,
-      "comment": "کیف اداری خوبیه اما کمی سنگینه.",
-      "date": "2024-05-12"
-    },
-    {
-      "id": 6,
+      "id": 1752054241796,
       "productId": 5,
-      "name": "زهرا احمدی",
-      "email": "zahra@example.com",
-      "rating": 5,
-      "comment": "کیف پول خیلی بامزه و کاربردی، عاشق رنگش شدم!",
-      "date": "2024-05-11"
-    },
-    {
-      "id": 7,
-      "productId": 1743949659494,
-      "name": "مریم حسینی",
-      "email": "maryam@example.com",
-      "rating": 5,
-      "comment": "کیف دوشی عالی برای استفاده روزمره. سبک و کاربردی.",
-      "date": "2024-05-17"
-    },
-    {
-      "id": 8,
-      "productId": 1743950393641,
-      "name": "امیررضا نوروزی",
-      "email": "amir@example.com",
-      "rating": 4,
-      "comment": "کیف پول جمع و جور، کیفیت چرم عالیه.",
-      "date": "2024-05-18"
-    },
-    {
-      "id": 1744270309956,
-      "productId": 3,
       "name": "مریم",
       "email": "",
       "rating": 3,
-      "comment": "محصول عالی بود",
-      "date": "2025-04-10T07:31:49.956Z"
-    },
-    {
-      "id": 1744357506631,
-      "productId": 4,
-      "name": "مریم طاهری",
-      "email": "thrimarym@gmail.com",
-      "rating": 4,
-      "comment": "کیف جمع و جوری است",
-      "date": "2025-04-11T07:45:06.631Z"
-    },
-    {
-      "id": 1744357731460,
-      "productId": 4,
-      "name": "محمد طاهری",
-      "email": "",
-      "rating": 5,
-      "comment": "برای کادو بسیار مناسب است.",
-      "date": "2025-04-11T07:48:51.460Z"
-    },
-    {
-      "id": 1744358159249,
-      "productId": 4,
-      "name": "مطهره",
-      "email": "",
-      "rating": 2,
-      "comment": "محصول خوبیست",
-      "date": "2025-04-11T07:55:59.249Z"
-    },
-    {
-      "id": 1744471917161,
-      "productId": 2,
-      "name": "مریم",
-      "email": "",
-      "rating": 3,
-      "comment": "خیلی خوب بود",
-      "date": "2025-04-12T15:31:57.161Z"
+      "comment": "کیفش واقعا با کیفیت بود",
+      "date": "2025-07-09T09:44:01.796Z"
     }
   ]
 }

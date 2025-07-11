@@ -1,98 +1,111 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import productsData from '../../../../app/data/products.json';
 
-export default function ProductEditForm() {
+const materials = ["چرم طبیعی", "چرم مصنوعی", "پارچه", "دیگر مواد"];
+const colors = ["مشکی", "قهوه ای روشن", "قهوه ای تیره", "جیگری", "صورتی"];
+
+
+export default function EditProductPage() {
   const { id } = useParams();
   const router = useRouter();
   const [product, setProduct] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [name, setName] = useState('');
-  const [categoryIds, setCategoryIds] = useState([]); // دسته‌بندی‌های انتخاب‌شده
+  const [categoryid, setCategoryid] = useState('');
   const [material, setMaterial] = useState('');
   const [color, setColor] = useState('');
   const [price, setPrice] = useState('');
+  const [stock_quantity, setStockQuantity] = useState(0);
   const [images, setImages] = useState([]);
-  const [mainImage, setMainImage] = useState('');
+  const [newImageFiles, setNewImageFiles] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
 
-  const categories = [
-    { id: 1, name: 'زنانه' },
-    { id: 2, name: 'مردانه' },
-    { id: 3, name: 'اکسسوری' },
-  ]; // دسته‌بندی‌های نمونه
-
+  // گرفتن اطلاعات محصول و دسته‌بندی‌ها
   useEffect(() => {
-    const foundProduct = productsData.products.find((p) => p.id === parseInt(id));
-    if (foundProduct) {
-      setProduct(foundProduct);
-      setName(foundProduct.name);
-      setCategoryIds(foundProduct.categoryIds || []); // دسته‌بندی‌های فعلی
-      setMaterial(foundProduct.material);
-      setColor(foundProduct.color);
-      setPrice(foundProduct.price);
-      setImages(foundProduct.images || []);
-      setMainImage(foundProduct.images[0] || '');
-    }
+    fetch(`/api/products?id=${id}`)
+      .then(res => res.json())
+      .then(data => {
+        const prod = data.product || {};
+        setProduct(prod);
+        setName(prod.name || '');
+        setCategoryid(prod.categoryid ? String(prod.categoryid) : '');
+        setMaterial(prod.material || '');
+        setColor(prod.color || '');
+        setPrice(prod.price || '');
+        setStockQuantity(prod.stock_quantity ?? 0);
+        setImages(prod.product_images || []);
+      });
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data.categories || []));
   }, [id]);
 
-  const handleCategoryChange = (categoryId) => {
-    if (categoryIds.includes(categoryId)) {
-      setCategoryIds(categoryIds.filter((id) => id !== categoryId)); // حذف دسته‌بندی
-    } else {
-      setCategoryIds([...categoryIds, categoryId]); // اضافه کردن دسته‌بندی
-    }
+  // حذف تصویر قبلی از UI (حذف واقعی باید در API هندل شود)
+  const handleRemoveImage = (imgId) => {
+    setImages(images.filter(img => img.id !== imgId));
   };
 
+  // حذف عکس جدید قبل از ذخیره
+  const handleRemovePreviewImage = (idx) => {
+    setPreviewImages(previewImages.filter((_, i) => i !== idx));
+    setNewImageFiles(newImageFiles.filter((_, i) => i !== idx));
+  };
+
+  // آپلود تصاویر جدید
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    const newImages = files.map((file) => URL.createObjectURL(file));
-    setImages([...images, ...newImages]);
+    setNewImageFiles(files);
+    setPreviewImages(files.map(file => URL.createObjectURL(file)));
   };
 
-  const handleRemoveImage = (image) => {
-    setImages(images.filter((img) => img !== image));
-    if (mainImage === image) {
-      setMainImage(images[0] || '');
-    }
-  };
-
-  const handleSetMainImage = (image) => {
-    setMainImage(image);
-  };
-
+  // ذخیره تغییرات
   const handleUpdate = async () => {
+    // آپلود تصاویر جدید
+    let newImageUrls = [];
+    for (const file of newImageFiles) {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formDataUpload,
+      });
+      if (!response.ok) {
+        alert("خطا در آپلود تصویر جدید");
+        return;
+      }
+      const data = await response.json();
+      newImageUrls.push(data.url);
+    }
+
+    // آرایه نهایی تصاویر (تصاویر قبلی که حذف نشده‌اند + تصاویر جدید)
+    const finalImages = [
+      ...images.map(img => img.url),
+      ...newImageUrls
+    ];
+
     const updatedProduct = {
+      id: Number(id),
       name,
-      categoryIds,
+      categoryid: Number(categoryid),
       material,
       color,
-      price,
-      images,
-      mainImage,
+      price: Number(price),
+      stock_quantity: Number(stock_quantity),
+      images: finalImages,
     };
 
-    try {
-      const response = await fetch('/api/updateProduct', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, updatedProduct }),
-      });
+    const response = await fetch('/api/products', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedProduct),
+    });
 
-      if (response.ok) {
-        router.push('/admin/EditProduct');
-      } else {
-        console.error('Error updating product');
-      }
-    } catch (error) {
-      console.error('Error sending request:', error);
+    if (response.ok) {
+      router.push('/admin/EditProduct');
+    } else {
+      alert('خطا در ویرایش محصول');
     }
-  };
-
-  const handleCancel = () => {
-    router.push('/admin/EditProduct');
   };
 
   if (!product) {
@@ -102,121 +115,135 @@ export default function ProductEditForm() {
   return (
     <div className="container mx-auto mt-8 p-6 bg-gray-50 rounded-lg shadow-lg rtl text-right">
       <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">ویرایش محصول</h1>
-      <form className="space-y-6">
-        {/* Product Name */}
+      <form className="space-y-6" onSubmit={e => e.preventDefault()}>
+        {/* نام محصول */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">نام محصول</label>
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
             placeholder="نام محصول"
           />
         </div>
-
-        {/* Categories */}
-        <div dir='rtl'>
-          <label className="block text-sm font-medium text-gray-700 mb-2">دسته‌بندی‌ها</label>
-          <div className="flex flex-wrap gap-3">
-            {categories.map((cat) => (
-              <label key={cat.id} className="flex mt-2 items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={categoryIds.includes(cat.id)}
-                  onChange={() => handleCategoryChange(cat.id)}
-                  className="rounded text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">{cat.name}</span>
-              </label>
+        {/* دسته‌بندی */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">دسته‌بندی</label>
+          <select
+            value={categoryid}
+            onChange={e => setCategoryid(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
+          >
+            <option value="">انتخاب دسته‌بندی</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
-          </div>
+          </select>
         </div>
-
-        {/* Material */}
+        {/* جنس */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">جنس</label>
-          <input
-            type="text"
+          <label className="block text-sm font-medium text-gray-700 mb-2">جنس محصول</label>
+          <select
             value={material}
-            onChange={(e) => setMaterial(e.target.value)}
+            onChange={e => setMaterial(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
-            placeholder="جنس"
-          />
+          >
+            <option value="">انتخاب کنید</option>
+            {materials.map(mat => (
+              <option key={mat} value={mat}>{mat}</option>
+            ))}
+          </select>
         </div>
 
-        {/* Color */}
+        {/* رنگ */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">رنگ</label>
-          <input
-            type="text"
+          <label className="block text-sm font-medium text-gray-700 mb-2">رنگ محصول</label>
+          <select
             value={color}
-            onChange={(e) => setColor(e.target.value)}
+            onChange={e => setColor(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
-            placeholder="رنگ"
-          />
+          >
+            <option value="">انتخاب کنید</option>
+            {colors.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
-
-        {/* Price */}
+        {/* قیمت */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">قیمت</label>
           <input
             type="number"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={e => setPrice(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
             placeholder="قیمت"
           />
         </div>
-
-        {/* Images */}
-        <div dir='rtl'>
+        {/* موجودی */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">موجودی</label>
+          <input
+            type="number"
+            value={stock_quantity}
+            onChange={e => setStockQuantity(e.target.value)}
+            min={0}
+            step={1}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-right"
+            placeholder="موجودی"
+          />
+        </div>
+        {/* تصاویر */}
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">تصاویر محصول</label>
-          <div className="flex flex-wrap gap-4">
-            {images.map((image, index) => (
-              <div key={index} className="relative group">
+          <div className="flex flex-wrap gap-3 mb-2">
+            {/* تصاویر قبلی */}
+            {images.map(img => (
+              <div key={img.id} className="relative">
                 <img
-                  src={image}
-                  alt={`تصویر ${index + 1}`}
-                  className={`w-32 h-32 object-cover rounded-lg border ${
-                    mainImage === image ? 'border-blue-500' : 'border-gray-300'
-                  }`}
+                  src={img.url}
+                  alt="تصویر محصول"
+                  className="w-24 h-24 object-cover rounded-lg border border-gray-300"
                 />
                 <button
                   type="button"
-                  onClick={() => handleSetMainImage(image)}
-                  className={`absolute bottom-2 left-2 text-xs px-2 py-1 rounded ${
-                    mainImage === image ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
-                  }`}
-                >
-                  {mainImage === image ? 'تصویر اصلی' : 'انتخاب'}
-                </button>
+                  onClick={() => handleRemoveImage(img.id)}
+                  className="absolute top-0 left-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                  title="حذف تصویر"
+                >×</button>
+              </div>
+            ))}
+            {/* تصاویر جدید (پیش‌نمایش) */}
+            {previewImages.map((img, idx) => (
+              <div key={idx} className="relative">
+                <img
+                  src={img}
+                  alt="تصویر جدید"
+                  className="w-24 h-24 object-cover rounded-lg border border-blue-300"
+                />
                 <button
                   type="button"
-                  onClick={() => handleRemoveImage(image)}
-                  className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  حذف
-                </button>
+                  onClick={() => handleRemovePreviewImage(idx)}
+                  className="absolute top-0 left-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                  title="حذف تصویر"
+                >×</button>
               </div>
             ))}
           </div>
-          <label className="block mt-4">
-            <span className="text-sm text-gray-500">افزودن تصویر جدید</span>
-            <input
-              type="file"
-              multiple
-              onChange={handleImageUpload}
-              className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-          </label>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="block mt-2"
+          />
         </div>
-
-        {/* Buttons */}
+        {/* دکمه‌ها */}
         <div className="flex justify-between">
           <button
             type="button"
-            onClick={handleCancel}
+            onClick={() => router.push('/admin/EditProduct')}
             className="w-1/2 m-2 bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             لغو
@@ -228,7 +255,6 @@ export default function ProductEditForm() {
           >
             ذخیره تغییرات
           </button>
-          
         </div>
       </form>
     </div>

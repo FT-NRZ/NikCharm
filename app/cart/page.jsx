@@ -1,10 +1,6 @@
-
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  HiOutlineTrash,
-  HiPlus,
-  HiMinus,
   HiArrowRight,
   HiOutlineShoppingBag
 } from 'react-icons/hi';
@@ -14,39 +10,62 @@ import {
   HiCreditCard,
   HiTruck
 } from 'react-icons/hi2';
-
-const initialCartItems = [
-  {
-    id: 1,
-    name: 'کیف چرم مردانه نیک چرم',
-    image: '/api/placeholder/300/300',
-    price: 2850000,
-    discountPrice: 2280000,
-    color: 'قهوه‌ای',
-    quantity: 1,
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: 'کفش چرم کلاسیک',
-    image: '/api/placeholder/300/300',
-    price: 3450000,
-    discountPrice: null,
-    color: 'مشکی',
-    quantity: 1,
-    inStock: true,
-  },
-];
+import { useRouter } from 'next/navigation';
+import CartCard from '../components/cards/cartCard';
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
 };
 
 export default function ShoppingCart() {
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  // گرفتن اطلاعات محصولات سبد خرید از دیتابیس
+  useEffect(() => {
+    const fetchCartProducts = async () => {
+      const stored = localStorage.getItem('cart');
+      if (!stored) {
+        setCartItems([]);
+        setLoading(false);
+        return;
+      }
+      const cart = JSON.parse(stored); // [{id, quantity}, ...]
+      if (cart.length === 0) {
+        setCartItems([]);
+        setLoading(false);
+        return;
+      }
+      // گرفتن اطلاعات هر محصول از API
+      const products = await Promise.all(
+        cart.map(async (ci) => {
+          const res = await fetch(`/api/products?id=${ci.id}`);
+          const data = await res.json();
+          if (data.product) {
+            return { ...data.product, quantity: ci.quantity };
+          }
+          return null;
+        })
+      );
+      setCartItems(products.filter(Boolean));
+      setLoading(false);
+    };
+    fetchCartProducts();
+  }, []);
+
+  useEffect(() => {
+    // فقط id و quantity را ذخیره کن
+    const simpleCart = cartItems.map(item => ({
+      id: item.id,
+      quantity: item.quantity
+    }));
+    localStorage.setItem('cart', JSON.stringify(simpleCart));
+  }, [cartItems]);
 
   const subtotal = cartItems.reduce((total, item) => {
-    return total + (item.discountPrice || item.price) * item.quantity;
+    const price = Number(item.discountPrice || item.discount_price || item.price || 0);
+    return total + price * item.quantity;
   }, 0);
 
   const removeItem = (id) => {
@@ -62,6 +81,14 @@ export default function ShoppingCart() {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-white text-center">
+        <span className="text-[#0F2C59] text-xl">در حال بارگذاری...</span>
+      </div>
+    );
+  }
+
   if (cartItems.length === 0) {
     return (
       <div className="flex items-center justify-center h-screen bg-white text-center">
@@ -73,7 +100,10 @@ export default function ShoppingCart() {
           </div>
           <h2 className="text-2xl font-bold text-[#0F2C59] mb-2">سبد خرید خالی است</h2>
           <p className="text-gray-500 mb-6">محصولات دلخواه خود را انتخاب کنید</p>
-          <button className="inline-flex items-center px-6 py-3 bg-[#0F2C59] text-white rounded-lg hover:bg-[#0F2C59]/90 transition">
+          <button
+            className="inline-flex items-center px-6 py-3 bg-[#0F2C59] text-white rounded-lg hover:bg-[#0F2C59]/90 transition"
+            onClick={() => router.push('/products')}
+          >
             <span>مشاهده محصولات</span>
             <HiArrowRight className="mr-2" />
           </button>
@@ -86,63 +116,22 @@ export default function ShoppingCart() {
     <div className="bg-white min-h-screen px-4 py-12">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8 border-b border-[#0F2C59]/10 pb-4">
+          <h1 className="text-3xl font-bold text-[#0F2C59] text-right">سبد خرید شما</h1>
           <div className="flex items-center gap-2 text-[#0F2C59]">
             <HiShoppingCart className="w-6 h-6" />
             <span className="text-sm">{cartItems.length} محصول</span>
           </div>
-          <h1 className="text-3xl font-bold text-[#0F2C59] text-right">سبد خرید شما</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             {cartItems.map((item) => (
-              <div key={item.id} className="flex flex-col md:flex-row gap-6 p-6 rounded-xl shadow-md border border-gray-100 bg-white hover:shadow-lg transition">
-                <div className="md:w-32 md:h-32 w-full h-48 rounded-xl overflow-hidden relative bg-gray-100">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover rounded-xl"
-                  />
-                </div>
-                <div className="flex-1 text-right">
-                  <h3 className="text-[#0F2C59] font-bold text-xl">{item.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1">رنگ: {item.color}</p>
-                  <div className="flex items-center gap-3 mt-3">
-                    {item.discountPrice ? (
-                      <>
-                        <span className="text-[#0F2C59] font-bold text-lg">{formatPrice(item.discountPrice)}</span>
-                        <span className="text-gray-400 line-through text-sm">{formatPrice(item.price)}</span>
-                        <span className="text-xs bg-[#0F2C59]/10 text-[#0F2C59] px-2 py-1 rounded-md">
-                          {Math.round((1 - item.discountPrice / item.price) * 100)}٪ تخفیف
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-[#0F2C59] font-bold text-lg">{formatPrice(item.price)}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col items-center justify-between gap-4">
-                  <button onClick={() => removeItem(item.id)} className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition">
-                    <HiOutlineTrash size={20} />
-                  </button>
-                  <div className="flex items-center border border-[#0F2C59]/20 rounded-xl overflow-hidden">
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="px-3 py-2 text-[#0F2C59] hover:bg-[#0F2C59]/5"
-                      disabled={item.quantity <= 1}
-                    >
-                      <HiMinus size={16} />
-                    </button>
-                    <span className="px-4 text-[#0F2C59] font-semibold">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="px-3 py-2 text-[#0F2C59] hover:bg-[#0F2C59]/5"
-                    >
-                      <HiPlus size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <CartCard
+                key={item.id}
+                item={item}
+                onRemove={removeItem}
+                onUpdateQuantity={updateQuantity}
+              />
             ))}
           </div>
 

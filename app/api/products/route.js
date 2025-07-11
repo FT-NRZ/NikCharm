@@ -1,90 +1,134 @@
-import fs from 'fs/promises';
-import path from 'path';
+import { NextResponse } from 'next/server';
+import prisma from '../../../lib/prisma';
 
-export async function GET() {
+export async function GET(request) {
   try {
-    // Define the path to your local JSON file
-    const filePath = path.join(process.cwd(), 'app', 'data', 'products.json');
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
 
-    // Check if the file exAists
-    try {
-      await fs.access(filePath);
-    } catch {
-      // If the file doesn't exist, create it with an empty products array
-      await fs.writeFile(filePath, JSON.stringify({ products: [] }, null, 2));
+    if (id) {
+      // دریافت یک محصول بر اساس id
+      const product = await prisma.products.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+          categories: true,
+          product_images: true, // اضافه شد
+        }
+      });
+
+      if (!product) {
+        return NextResponse.json({ error: 'محصول یافت نشد' }, { status: 404 });
+      }
+      return NextResponse.json({ product }, { status: 200 });
+    } else {
+      // بازگردانی لیست محصولات با تصاویر
+      const products = await prisma.products.findMany({
+        include: {
+          categories: true,
+          product_images: true, // اضافه شد
+        }
+      });
+      return NextResponse.json({ products }, { status: 200 });
     }
-
-    // Read the current contents of the JSON file
-    const fileData = await fs.readFile(filePath, 'utf-8');
-    const jsonData = JSON.parse(fileData);
-
-    // Return the products data
-    return new Response(JSON.stringify(jsonData), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('خطا در دریافت اطلاعات:', error);
-    return new Response(JSON.stringify({ error: 'خطا در دریافت اطلاعات' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return NextResponse.json({ error: 'خطا در دریافت اطلاعات محصولات' }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
-    // Parse the incoming JSON data from the request body
-    const newProduct = await request.json();
+    const data = await request.json();
 
-    // Validate the incoming product data
-    if (
-      !newProduct.id ||
-      !newProduct.name ||
-      !newProduct.price ||
-      typeof newProduct.price !== 'number' ||
-      !newProduct.originalPrice ||
-      typeof newProduct.originalPrice !== 'number'
-    ) {
-      return new Response(
-        JSON.stringify({ error: 'داده‌های ورودی نامعتبر هستند' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
+    // اعتبارسنجی فیلدهای اجباری
+    if (!data.name || !data.price || !data.categoryid) {
+      return NextResponse.json(
+        { error: 'نام، قیمت و دسته‌بندی الزامی هستند' },
+        { status: 400 }
       );
     }
-
-    // Define the path to your local JSON file
-    const filePath = path.join(process.cwd(), 'app', 'data', 'products.json');
-
-    // Check if the file exists
-    try {
-      await fs.access(filePath);
-    } catch {
-      // If the file doesn't exist, create it with an empty products array
-      await fs.writeFile(filePath, JSON.stringify({ products: [] }, null, 2));
+    if (isNaN(parseFloat(data.price))) {
+      return NextResponse.json({ error: 'قیمت نامعتبر است' }, { status: 400 });
     }
 
-    // Read the current contents of the JSON file
-    const fileData = await fs.readFile(filePath, 'utf-8');
-    const jsonData = JSON.parse(fileData);
-
-    // Append the new product to the products array
-    jsonData.products.push(newProduct);
-
-    // Write the updated data back to the file (formatted with 2-space indent for readability)
-    await fs.writeFile(filePath, JSON.stringify(jsonData, null, 2));
-
-    return new Response(JSON.stringify({ message: 'محصول با موفقیت ایجاد شد!' }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' },
+    // ایجاد محصول جدید با تصاویر
+    const product = await prisma.products.create({
+      data: {
+        name: data.name,
+        price: parseFloat(data.price),
+        categoryid: parseInt(data.categoryid),
+        discount: data.discount ? parseInt(data.discount) : 0,
+        color: data.color || null,
+        size: data.size ? parseInt(data.size) : null,
+        material: data.material || null,
+        information: data.information || null,
+        number_of_comments: 0,
+        stock_quantity: data.stock_quantity ? parseInt(data.stock_quantity) : 0,
+        product_images: {
+          create: Array.isArray(data.images)
+            ? data.images.map((url) => ({ url }))
+            : [],
+        },
+      },
+      include: {
+        product_images: true,
+      }
     });
+
+    return NextResponse.json(
+      { message: 'محصول با موفقیت ایجاد شد', product },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('خطا:', error);
-    return new Response(JSON.stringify({ error: 'خطا در ذخیره اطلاعات' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
+    console.error('خطا در ایجاد محصول:', error);
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: 'نام محصول تکراری است' }, { status: 400 });
+    }
+    if (error.code === 'P2003') {
+      return NextResponse.json({ error: 'دسته‌بندی انتخاب شده وجود ندارد' }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'خطای سرور در ایجاد محصول' }, { status: 500 });
+  }
+}
+export async function PUT(request) {
+  try {
+    const data = await request.json();
+    if (!data.id) {
+      return NextResponse.json({ error: "شناسه محصول ارسال نشده" }, { status: 400 });
+    }
+
+    // ویرایش اطلاعات محصول
+    const updated = await prisma.products.update({
+      where: { id: Number(data.id) },
+      data: {
+        name: data.name,
+        price: parseFloat(data.price),
+        categoryid: parseInt(data.categoryid),
+        discount: data.discount ? parseInt(data.discount) : 0,
+        color: data.color || null,
+        size: data.size ? parseInt(data.size) : null,
+        material: data.material || null,
+        information: data.information || null,
+        stock_quantity: data.stock_quantity ? parseInt(data.stock_quantity) : 0,
+        // تصاویر: حذف قبلی و افزودن جدید
+        product_images: {
+          deleteMany: {},
+          create: Array.isArray(data.images)
+            ? data.images.map((url) => ({ url }))
+            : [],
+        },
+      },
+      include: {
+        product_images: true,
+      }
     });
+
+    return NextResponse.json(
+      { message: 'محصول با موفقیت ویرایش شد', product: updated },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('خطا در ویرایش محصول:', error);
+    return NextResponse.json({ error: 'خطای سرور در ویرایش محصول' }, { status: 500 });
   }
 }

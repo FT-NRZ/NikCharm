@@ -1,19 +1,43 @@
-import categories from '../../data/categories.json';
-import products from '../../data/products.json';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
+const prisma = new PrismaClient();
+
+// گرفتن لیست دسته‌بندی‌ها
 export async function GET() {
-  const categoriesWithImages = categories.categories.map((category) => {
-    const product = products.products.find(
-      (product) =>
-        Array.isArray(product.categoryIds) &&
-        product.categoryIds.includes(category.id)
-    );
-
-    return {
-      ...category,
-      image: product?.images?.[0] || null
-    };
+  const categories = await prisma.categories.findMany({
+    include: {
+      subcategories: true,
+    },
+    orderBy: { id: "asc" },
   });
+  return NextResponse.json({ categories });
+}
 
-  return Response.json(categoriesWithImages);
+// افزودن دسته‌بندی جدید
+export async function POST(request) {
+  try {
+    const data = await request.json();
+    if (!data.name) {
+      return NextResponse.json(
+        { error: "نام دسته‌بندی الزامی است" },
+        { status: 400 }
+      );
+    }
+    const category = await prisma.categories.create({
+      data: {
+        name: data.name,
+        type: data.type || "other",
+      },
+    });
+    return NextResponse.json(
+      { message: "دسته‌بندی با موفقیت ایجاد شد", category },
+      { status: 201 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { error: "خطا در ایجاد دسته‌بندی" },
+      { status: 500 }
+    );
+  }
 }

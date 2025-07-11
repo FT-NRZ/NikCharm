@@ -1,9 +1,12 @@
-// app/layout.js
+'use client';
 import './globals.css';
 import HeaderHandler from './components/HeaderHandler';
 import FooterHandler from './components/FooterHandler';
+import { usePathname } from 'next/navigation';
 
 export default function RootLayout({ children }) {
+  const pathname = usePathname(); // این خط باید اینجا باشد
+
   return (
     <html lang="fa" dir="rtl">
       <head>
@@ -12,7 +15,7 @@ export default function RootLayout({ children }) {
       <body>
         <HeaderHandler />
         {children}
-        <FooterHandler />
+        {!pathname?.startsWith('/admin') && <FooterHandler />}
       </body>
     </html>
   );

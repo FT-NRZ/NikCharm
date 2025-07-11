@@ -6,8 +6,6 @@ import { Star } from 'lucide-react';
 export default function ProductComments({ productId }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState({
-    name: '',
-    email: '',
     rating: 5,
     comment: '',
   });
@@ -19,9 +17,10 @@ export default function ProductComments({ productId }) {
       try {
         const res = await fetch(`/api/comments/${productId}`);
         const data = await res.json();
-        setComments(data);
+        setComments(Array.isArray(data.comments) ? data.comments : []);
       } catch (error) {
         console.error('Error fetching comments:', error);
+        setComments([]);
       }
     };
     fetchComments();
@@ -32,25 +31,23 @@ export default function ProductComments({ productId }) {
     try {
       const res = await fetch(`/api/comments/${productId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newComment,
+          userId: 1, // مقدار تستی، باید مقدار واقعی کاربر لاگین‌شده باشد
+          comment: newComment.comment,
           rating: parseInt(newComment.rating),
         }),
       });
 
-      if (res.ok) {
-        const savedComment = await res.json();
-        setComments((prev) => [savedComment, ...prev]);
-        setNewComment({ name: '', email: '', rating: 5, comment: '' });
+      const result = await res.json();
+      if (res.ok && result.comment) {
+        setComments((prev) => [result.comment, ...prev]);
+        setNewComment({ rating: 5, comment: '' });
         setShowForm(false);
         setSuccessMessage('نظر شما با موفقیت ثبت شد!');
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
-        const errorData = await res.json();
-        setSuccessMessage(errorData.error || 'خطا در ثبت نظر');
+        setSuccessMessage(result.error || 'خطا در ثبت نظر');
       }
     } catch (error) {
       setSuccessMessage('خطا در ارتباط با سرور');
@@ -63,27 +60,31 @@ export default function ProductComments({ productId }) {
 
       {/* Comments List */}
       <div className={`space-y-6 mb-4 flex-1 overflow-y-auto ${showForm ? 'invisible' : 'visible'}`}>
-        {comments.map((comment) => (
-          <div key={comment.id} className="border-b pb-6">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="bg-blue-100 text-blue-800 w-10 h-10 rounded-full flex items-center justify-center">
-                {comment.name[0]}
-              </div>
-              <div>
-                <h4 className="font-medium">{comment.name}</h4>
-                <div className="flex items-center gap-1 text-yellow-500">
-                  {[...Array(comment.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current" />
-                  ))}
+        {comments.length === 0 ? (
+          <div className="text-gray-500">نظری ثبت نشده است.</div>
+        ) : (
+          comments.map((comment) => (
+            <div key={comment.comment_id} className="border-b pb-6">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="bg-blue-100 text-blue-800 w-10 h-10 rounded-full flex items-center justify-center">
+                  {comment.users?.full_name?.charAt(0) || 'ک'}
+                </div>
+                <div>
+                  <h4 className="font-medium">{comment.users?.full_name || `کاربر ${comment.user_id}`}</h4>
+                  <div className="flex items-center gap-1 text-yellow-500">
+                    {[...Array(comment.stars || 0)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current" />
+                    ))}
+                  </div>
                 </div>
               </div>
+              <p className="text-gray-700">{comment.text}</p>
+              <time className="text-sm text-gray-500">
+                {comment.date && new Date(comment.date).toLocaleDateString()}
+              </time>
             </div>
-            <p className="text-gray-700">{comment.comment}</p>
-            <time className="text-sm text-gray-500">
-              {new Date(comment.date).toLocaleDateString()}
-            </time>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Success Message */}
@@ -109,26 +110,6 @@ export default function ProductComments({ productId }) {
           onSubmit={handleSubmit} 
           className="absolute top-3 left-0 w-full h-full bg-white p-4 rounded-xl shadow-lg z-50 flex flex-col"
         >
-          <div className="grid grid-cols-2 gap-3 mb-3">
-          <label className=" mb-1 text-sm">نام:</label>
-            <input
-              type="text"
-              placeholder="نام شما"
-              className="p-2 border rounded-lg text-sm"
-              value={newComment.name}
-              onChange={(e) => setNewComment({ ...newComment, name: e.target.value })}
-              required
-            />
-            <label className=" mb-1 text-sm">ایمیل (اختیاری):</label>
-            <input
-              type="email"
-              placeholder="ایمیل (اختیاری)"
-              className="p-2 border rounded-lg text-sm"
-              value={newComment.email}
-              onChange={(e) => setNewComment({ ...newComment, email: e.target.value })}
-            />
-          </div>
-
           <div className="mb-3">
             <label className="block mb-1 text-sm">امتیاز:</label>
             <div className="flex items-center gap-1">

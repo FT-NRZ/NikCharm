@@ -1,45 +1,41 @@
-import fs from 'fs/promises';
-import path from 'path';
+import { NextResponse } from 'next/server';
+import prisma from '../../../lib/prisma';
 
 export async function POST(request) {
   try {
-    const { id, updatedProduct } = await request.json();
+    const data = await request.json();
 
-    // مسیر فایل JSON
-    const filePath = path.join(process.cwd(), 'app', 'data', 'products.json');
-
-    // خواندن محتوای فعلی فایل JSON
-    const fileData = await fs.readFile(filePath, 'utf-8');
-    const jsonData = JSON.parse(fileData);
-
-    // یافتن اندیس محصول برای به‌روزرسانی
-    const productIndex = jsonData.products.findIndex((product) => product.id === parseInt(id));
-
-    if (productIndex === -1) {
-      return new Response(JSON.stringify({ error: 'محصول مورد نظر یافت نشد' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // اعتبارسنجی فیلدهای اجباری
+    if (!data.id || !data.name || !data.price || !data.categoryid) {
+      return NextResponse.json(
+        { error: 'اطلاعات ارسالی ناقص است' },
+        { status: 400 }
+      );
     }
 
-    // به‌روزرسانی محصول
-    jsonData.products[productIndex] = {
-      ...jsonData.products[productIndex],
-      ...updatedProduct,
-    };
-
-    // نوشتن داده‌های به‌روزرسانی‌شده به فایل JSON
-    await fs.writeFile(filePath, JSON.stringify(jsonData, null, 2), 'utf-8');
-
-    return new Response(JSON.stringify({ message: 'محصول با موفقیت به‌روزرسانی شد' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+    // ویرایش محصول در دیتابیس
+    const updated = await prisma.products.update({
+      where: { id: Number(data.id) },
+      data: {
+        name: data.name,
+        categoryid: Number(data.categoryid),
+        material: data.material,
+        color: data.color,
+        price: Number(data.price),
+        image_url: data.image_url,
+        stock_quantity: Number(data.stock_quantity),
+      },
     });
+
+    return NextResponse.json(
+      { message: 'محصول با موفقیت ویرایش شد', product: updated },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('خطا در به‌روزرسانی محصول:', error);
-    return new Response(JSON.stringify({ error: 'خطا در به‌روزرسانی محصول' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error('خطا در ویرایش محصول:', error);
+    return NextResponse.json(
+      { error: 'خطا در ویرایش محصول' },
+      { status: 500 }
+    );
   }
 }

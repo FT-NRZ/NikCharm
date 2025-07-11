@@ -1,76 +1,76 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter for navigation
+import { useRouter } from 'next/navigation';
+import { motion } from "framer-motion";
 
-export default function CategoriesCircle() {
-  const [categories, setCategories] = useState([]);
+// آرایه رنگ‌های قهوه‌ای و کرم و جیگری
+const circleColors = ['#DAC0A3', '#A08963', '#4B352A', '#3D0301'];
+
+export default function CategoriesCircle({ categories: propCategories }) {
+  const [categories, setCategories] = useState(propCategories || []);
   const [products, setProducts] = useState([]);
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
 
-    useEffect(() => {
-      async function fetchCategories() {
-        try {
-          const res = await fetch('/api/categories');
-          if (!res.ok) throw new Error('Failed to fetch categories');
-          const data = await res.json();
-          setCategories(data || []); // اینجا تغییر دادم
-        } catch (error) {
-          console.error('Error fetching categories:', error);
-        }
-      }
-
-    // Fetch products.json
-    async function fetchProducts() {
-      try {
-        const res = await fetch('/api/products');
-        if (!res.ok) throw new Error('Failed to fetch products');
-        const data = await res.json();
-        setProducts(data.products || []);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
+  // اگر propCategories نیامده بود، از API بگیر
+  useEffect(() => {
+    if (!propCategories || propCategories.length === 0) {
+      fetch('/api/categories')
+        .then(res => res.json())
+        .then(data => setCategories(data.categories || []));
     }
+  }, [propCategories]);
 
-    fetchCategories();
-    fetchProducts();
+  // گرفتن محصولات برای نمایش عکس هر دسته‌بندی
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => setProducts(Array.isArray(data.products) ? data.products : []));
   }, []);
 
-  // Get a product image for each category
-  // Get a product image for each category
-const getCategoryImage = (categoryId) => {
-  const product = products.find(
-    (product) =>
-      Array.isArray(product.categoryIds) &&
-      product.categoryIds.includes(categoryId)
-  );
-  return product ? product.images[0] : '/placeholder.jpg';
-};
-
-
-  // Handle category click
+  // کلیک روی دسته‌بندی
   const handleCategoryClick = (categoryId) => {
-    router.push(`/products?category=${categoryId}`); // Navigate to products page with category filter
+    router.push(`/products?category=${categoryId}`);
+  };
+
+  // پیدا کردن تصویر برای هر دسته‌بندی
+  const getCategoryImage = (categoryId) => {
+    // اولین محصول این دسته‌بندی
+    const product = products.find(p => p.categoryid === categoryId && p.product_images && p.product_images.length > 0);
+    return product?.product_images?.[0]?.url || '/leather-placeholder.jpg';
   };
 
   return (
-    <div className="flex flex-wrap justify-center gap-8 sm:gap-20 mt-8 px-4">
+    <div className="flex flex-wrap justify-center md:mt-8 gap-8 sm:gap-20 px-4">
       {categories.length > 0 ? (
-        categories.map((category) => (
+        categories.map((category, idx) => (
           <div
             key={category.id}
             className="flex flex-col items-center group transition-transform duration-300 cursor-pointer"
-            onClick={() => handleCategoryClick(category.id)} // Add click handler
+            onClick={() => handleCategoryClick(category.id)}
           >
-            {/* Circle with product image */}
-            <div className="w-24 h-24 sm:w-36 sm:h-36 rounded-full overflow-hidden border-1 border-gradient-to-r from-blue-500 to-purple-500 shadow-lg group-hover:scale-110 transition-transform duration-300">
+            {/* دایره با عکس محصول */}
+            <motion.div
+              whileHover={{
+                scale: 1.1,
+                rotate: [0, 2, -2, 2, -2, 0],
+                transition: { duration: 0.5 },
+              }}
+              className="w-24 h-24 sm:w-36 sm:h-36 rounded-full border-1 shadow-lg flex items-center justify-center overflow-hidden"
+              style={{
+                backgroundColor: circleColors[idx % circleColors.length],
+                borderColor: 'rgba(255,255,255,0.7)',
+                borderWidth: '4px',
+              }}
+            >
               <img
                 src={getCategoryImage(category.id)}
                 alt={category.name}
                 className="w-full h-full object-cover"
+                style={{ borderRadius: '100%' }}
               />
-            </div>
-            {/* Category name */}
+            </motion.div>
+            {/* نام دسته‌بندی */}
             <p className="mt-2 sm:mt-4 text-center text-gray-800 font-semibold text-sm sm:text-lg group-hover:scale-110 group-hover:text-red-900 transition-transform duration-300">
               {category.name}
             </p>

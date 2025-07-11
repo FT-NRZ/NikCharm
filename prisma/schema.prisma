@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model categories {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  type          String?         @default("other") @db.VarChar(50)
+  products      products[]
+  subcategories subcategories[]
+}
+
+model comments {
+  comment_id Int       @id @default(autoincrement())
+  user_id    Int
+  product_id Int
+  text       String
+  stars      Int
+  date       DateTime? @default(now()) @db.Timestamp(6)
+  products   products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model login_records {
+  record_id      Int       @id @default(autoincrement())
+  user_id        Int
+  login_time     DateTime? @default(now()) @db.Timestamp(6)
+  log_out_time   DateTime? @db.Timestamp(6)
+  expirationdate DateTime? @db.Timestamp(6)
+  token          String?   @db.VarChar(1000)
+  users          users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model order_items {
+  id          Int      @id @default(autoincrement())
+  order_id    Int
+  product_id  Int
+  name        String   @db.VarChar(200)
+  price       Decimal  @db.Decimal(10, 2)
+  quantity    Int
+  total_price Decimal? @db.Decimal(10, 2)
+  orders      orders   @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  products    products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model orders {
+  id               Int           @id @default(autoincrement())
+  user_id          Int
+  delivery_address String
+  totalprice       Decimal?      @default(0) @db.Decimal(10, 2)
+  numberoforders   Int?          @default(1)
+  order_item_id    Int?
+  date             DateTime?     @default(now()) @db.Timestamp(6)
+  status           String?       @default("pending") @db.VarChar(50)
+  order_items      order_items[]
+  users            users         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payments         payments[]
+}
+
+model payment_gateways {
+  gatewayid   Int        @id @default(autoincrement())
+  gatewayname String     @db.VarChar(100)
+  apikey      String     @db.VarChar(500)
+  payments    payments[]
+}
+
+model payments {
+  paymentid        Int               @id @default(autoincrement())
+  orderid          Int
+  amount           Decimal           @db.Decimal(10, 2)
+  status           String?           @default("pending") @db.VarChar(50)
+  transactionid    String?           @db.VarChar(255)
+  paymentdate      DateTime?         @default(now()) @db.Timestamp(6)
+  gateway_id       Int?
+  payment_gateways payment_gateways? @relation(fields: [gateway_id], references: [gatewayid], onDelete: NoAction, onUpdate: NoAction)
+  orders           orders            @relation(fields: [orderid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model products {
+  id                 Int           @id @default(autoincrement())
+  categoryid         Int
+  name               String        @db.VarChar(200)
+  price              Decimal       @db.Decimal(10, 2)
+  discount           Int?          @default(0)
+  color              String?       @db.VarChar(50)
+  size               Int?
+  material           String?       @db.VarChar(100)
+  information        String?
+  product_images product_images[]
+  number_of_comments Int?          @default(0)
+  stock_quantity     Int?          @default(0)
+  comments           comments[]
+  order_items        order_items[]
+  categories         categories    @relation(fields: [categoryid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product_images {
+  id         Int      @id @default(autoincrement())
+  url        String   @db.VarChar(500)
+  product_id Int
+  product    products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+}
+
+model receiver_info {
+  id           Int     @id @default(autoincrement())
+  userid       Int
+  address      String
+  city         String  @db.VarChar(50)
+  house_no     Int?
+  phone_number String  @db.VarChar(20)
+  postalcode   String? @db.VarChar(20)
+  users        users   @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model roles {
+  id         Int          @id @default(autoincrement())
+  name       String       @unique @db.VarChar(50)
+  user_roles user_roles[]
+}
+
+model subcategories {
+  subcategory_id Int        @id @default(autoincrement())
+  category_id    Int
+  name           String     @db.VarChar(100)
+  categories     categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_roles {
+  userid Int
+  roleid Int
+  roles  roles @relation(fields: [roleid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users  users @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userid, roleid])
+}
+
+model users {
+  id            Int             @id @default(autoincrement())
+  username      String          @unique @db.VarChar(50)
+  email         String          @unique @db.VarChar(100)
+  full_name     String          @db.VarChar(100)
+  passwordhash  String          @db.VarChar(255)
+  phone_number  String?         @db.VarChar(20)
+  city          String?         @db.VarChar(50)
+  province      String?         @db.VarChar(50)
+  description   String?
+  isactive      Boolean?        @default(true)
+  created_at    DateTime?       @default(now()) @db.Timestamp(6)
+  comments      comments[]
+  login_records login_records[]
+  orders        orders[]
+  receiver_info receiver_info[]
+  user_roles    user_roles[]
+}

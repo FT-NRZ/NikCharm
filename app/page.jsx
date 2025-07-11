@@ -1,5 +1,4 @@
 'use client';
-import productsData from './data/products.json';
 import FeaturedSlider from './components/sliders/FeaturedSlider';
 import ProductCard from './components/cards/ProductCard';
 import CategoriesCircle from './components/cards/categoriesCircle';
@@ -30,13 +29,33 @@ function throttle(func, limit) {
 }
 
 export default function Home() {
-  const { products } = productsData || { products: [] };
+  const [products, setProducts] = useState([]);
   const mainProductsRef = useRef(null);
   const discountProductsRef = useRef(null);
   const lastScrollY = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [categories, setCategories] = useState([]);
 
-  const discountedProducts = products?.filter(p => p?.discountPercent > 0) || [];
+  
+useEffect(() => {
+  fetch('/api/categories')
+    .then(res => res.json())
+    .then(data => setCategories(data.categories || []));
+}, []);
+
+useEffect(() => {
+  fetch('/api/products')
+    .then(res => res.json())
+    .then(data => {
+      setProducts(data.products || []);
+    });
+}, [categories]);
+
+  // محصولات تخفیف‌دار
+  const discountedProducts = products?.filter(
+    p => (p.discount > 0 || p.discountPercent > 0)
+  ) || [];
 
   useEffect(() => {
     const handleScrollProgress = () => {
@@ -69,7 +88,6 @@ export default function Home() {
     }, 100),
     []
   );
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -78,10 +96,10 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-    useEffect(() => {
-      window.addEventListener('scroll', handleScroll);
-      return () => window.removeEventListener('scroll', handleScroll);
-    }, [handleScroll]);
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   const manualScroll = (container, direction) => {
     if (!container.current) return;
@@ -92,19 +110,41 @@ export default function Home() {
     });
   };
 
+  const [sliderImages, setSliderImages] = useState([]);
+    useEffect(() => {
+      fetch("/api/slider")
+        .then((res) => res.json())
+        .then((data) => {
+          setSliderImages(data.sliderImages || []);
+        });
+    }, []);
+
   return (
     <main className="mx-auto bg-white pb-16">
-
-      {/* Featured Slider */}
-      <div className="mb-12">
-        <FeaturedSlider products={products} />
+      {/* Sticky Progress Bar */}
+      <div 
+        className="h-0.5 bg-red-800 mx-auto transition-all duration-300 ease-out max-w-[100%] sticky top-0 z-30"
+        style={{ 
+          width: `${scrollProgress * 0.8}%`,
+          maxWidth: '100%'
+        }}
+      />
+      {/* Categories Section */}
+      <div className="w-full">
+        <div className="mb-4">
+          <CategoriesCircle categories={categories} />
+        </div>
       </div>
 
+      {/* Featured Slider */}
+      <div className=" mb-12">
+        <FeaturedSlider sliderImages={sliderImages} />
+      </div>
+      
       {/* Discounted Products - حرکت به راست با اسکرول پایین */}
-      {/* Discounted Products - حرکت به راست با اسکرول پایین */}
-      <div className="mb-12 px-4">
+      <div className="mb-12 px-4 bg-gray-100 rounded-xl m-4">
         <div className="relative mx-auto max-w-screen-2xl group">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-right">محصولات تخفیف‌دار</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 pt-6 text-right">محصولات تخفیف‌دار</h2>
           {isMobile ? (
             <ProductOffSlider products={discountedProducts} />
           ) : (
@@ -122,22 +162,23 @@ export default function Home() {
                   />
                 ))}
               </div>
+              {/* جای arrow ها اینجا عوض شد */}
               <div className="absolute top-1/2 left-0 transform -translate-y-1/2 flex justify-between w-full px-4">
-                <button
-                  onClick={() => manualScroll(discountProductsRef, 'left')}
-                  className="bg-white/80 hover:bg-white backdrop-blur-sm transition-all duration-300 
-                            text-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105
-                            w-12 h-12 flex items-center justify-center border border-gray-100"
-                >
-                  ←
-                </button>
                 <button
                   onClick={() => manualScroll(discountProductsRef, 'right')}
                   className="bg-white/80 hover:bg-white backdrop-blur-sm transition-all duration-300 
-                            text-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105
-                            w-12 h-12 flex items-center justify-center border border-gray-100"
+                  text-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105
+                  w-12 h-12 flex items-center justify-center border border-gray-100"
                 >
                   →
+                </button>
+                <button
+                  onClick={() => manualScroll(discountProductsRef, 'left')}
+                  className="bg-white/80 hover:bg-white backdrop-blur-sm transition-all duration-300 
+                  text-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105
+                  w-12 h-12 flex items-center justify-center border border-gray-100"
+                >
+                  ←
                 </button>
               </div>
             </>
@@ -145,25 +186,9 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Categories Section */}
-      <div className="w-full">
-        <h1 className='flex text-xl justify-center mb-4'>خرید بر اساس دسته بندی</h1>
-        <div 
-          className="h-0.5 bg-blue-500 mx-auto transition-all duration-300 ease-out max-w-[80%]"
-          style={{ 
-            width: `${scrollProgress * 0.8}%`,
-            maxWidth: '100%' 
-          }}
-        />
-        <div className="py-8 mb-14">
-          <CategoriesCircle />
-        </div>
-      </div>
-
       {/* All Products - حرکت به چپ با اسکرول پایین */}
-      
-      <div className="relative mx-auto max-w-screen-2xl px-4 group">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-right">همه محصولات</h2>
+      <div className="relative  px-4 group bg-gray-100 rounded-xl m-4">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 pt-6 text-right">همه محصولات</h2>
         {isMobile ? (
           <ProductSlider products={products} />
         ) : (
@@ -173,23 +198,18 @@ export default function Home() {
               className="flex overflow-x-auto gap-4 pb-4 scroll-smooth"
               style={{ direction: 'rtl', scrollbarWidth: 'none' }}
             >
-              {products.map(product => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  className="flex-shrink-0 ml-4 w-72"
-                />
-              ))}
+              {products
+                .filter(product => product.stock_quantity > 0)
+                .map(product => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    className="flex-shrink-0 ml-4 w-72"
+                  />
+                ))}
             </div>
+            {/* جای arrow ها اینجا عوض شد */}
             <div className="absolute top-1/2 left-4 transform -translate-y-1/2 flex justify-between w-full px-4">
-              <button
-                onClick={() => manualScroll(mainProductsRef, 'left')}
-                className="bg-white/80 hover:bg-white backdrop-blur-sm transition-all duration-300 
-                          text-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105
-                          w-12 h-12 flex items-center justify-center border border-gray-100"
-              >
-                ←
-              </button>
               <button
                 onClick={() => manualScroll(mainProductsRef, 'right')}
                 className="bg-white/80 hover:bg-white backdrop-blur-sm transition-all duration-300 
@@ -198,11 +218,19 @@ export default function Home() {
               >
                 →
               </button>
+              <button
+                onClick={() => manualScroll(mainProductsRef, 'left')}
+                className="bg-white/80 hover:bg-white backdrop-blur-sm transition-all duration-300 
+                          text-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105
+                          w-12 h-12 flex items-center justify-center border border-gray-100 mr-5"
+              >
+                ←
+              </button>
             </div>
           </>
         )}
       </div>
-
+      
     </main>
   );
 }
