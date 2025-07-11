@@ -104,7 +104,9 @@ export default function ProductSlider({ products }) {
                   </div>
                   <div className="mt-2">
                     <span className="font-medium text-gray-900">
-                      {product.price?.toLocaleString() || '۰'} تومان
+                      {product.price !== undefined && product.price !== null
+                        ? product.price.toLocaleString('en-US')
+                        : '0'} تومان
                     </span>
                   </div>
                 </div>

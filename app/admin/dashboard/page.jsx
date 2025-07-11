@@ -8,9 +8,12 @@ export default function DashboardPage() {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [isClient, setIsClient] = useState(false); // برای حل hydration mismatch
 
   // گرفتن محصولات و دسته‌بندی‌ها از دیتابیس
   useEffect(() => {
+    setIsClient(true); // نشان دادن که در کلاینت هستیم
+    
     fetch('/api/products')
       .then(res => res.json())
       .then(data => setProducts(data.products || []));
@@ -19,22 +22,24 @@ export default function DashboardPage() {
       .then(data => setCategories(data.categories || []));
   }, []);
 
-  // محاسبه کمترین و بیشترین قیمت محصولات
+  // محاسبه کمترین و بیشترین قیمت محصولات - فقط در کلاینت
   const prices = products.map(p => Number(p.price)).filter(Boolean);
   const minPrice = prices.length ? Math.min(...prices) : 0;
-  const maxPrice = prices.length ? Math.max(...prices) : 0;
+  const maxPrice = prices.length ? Math.max(...prices) : 1000000; // مقدار پیش‌فرض
 
   // اسلایدر قیمت
   const [sliderPos, setSliderPos] = useState({ start: 0, end: 100 });
-  const [priceRange, setPriceRange] = useState({ start: minPrice, end: maxPrice });
+  const [priceRange, setPriceRange] = useState({ start: 0, end: 1000000 });
   const sliderRef = useRef(null);
   const isDragging = useRef(null);
 
   useEffect(() => {
-    const startPrice = Math.round(minPrice + (sliderPos.start / 100) * (maxPrice - minPrice));
-    const endPrice = Math.round(minPrice + (sliderPos.end / 100) * (maxPrice - minPrice));
-    setPriceRange({ start: startPrice, end: endPrice });
-  }, [sliderPos, minPrice, maxPrice]);
+    if (isClient && prices.length > 0) {
+      const startPrice = Math.round(minPrice + (sliderPos.start / 100) * (maxPrice - minPrice));
+      const endPrice = Math.round(minPrice + (sliderPos.end / 100) * (maxPrice - minPrice));
+      setPriceRange({ start: startPrice, end: endPrice });
+    }
+  }, [sliderPos, minPrice, maxPrice, isClient, prices.length]);
 
   // --- اسلایدر قیمت: مدیریت درگ ---
   const handleMove = (clientX) => {
@@ -83,6 +88,12 @@ export default function DashboardPage() {
     const matchesPrice = price >= priceRange.start && price <= priceRange.end;
     return matchesSearch && matchesCategory && matchesPrice;
   });
+
+  // فرمت کردن عدد برای جلوگیری از hydration mismatch
+  const formatPrice = (price) => {
+    if (!isClient) return '0'; // در سرور همیشه 0 نمایش بده
+    return price.toLocaleString('en-US'); // استفاده از locale انگلیسی
+  };
 
   return (
     <div>
@@ -138,10 +149,10 @@ export default function DashboardPage() {
               onMouseDown={() => handleDragStart('end')}
               onTouchStart={() => handleDragStart('end')}
             />
-            {/* نمایش قیمت‌ها */}
+            {/* نمایش قیمت‌ها - با suppressHydrationWarning */}
             <div className="flex justify-between w-full mt-7 px-1 text-xs text-gray-600 font-bold">
-              <span>{priceRange.end.toLocaleString()} تومان</span>
-              <span>{priceRange.start.toLocaleString()} تومان</span>
+              <span suppressHydrationWarning>{formatPrice(priceRange.end)} تومان</span>
+              <span suppressHydrationWarning>{formatPrice(priceRange.start)} تومان</span>
             </div>
           </div>
         </div>

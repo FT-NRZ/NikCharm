@@ -3,9 +3,10 @@ import './globals.css';
 import HeaderHandler from './components/HeaderHandler';
 import FooterHandler from './components/FooterHandler';
 import { usePathname } from 'next/navigation';
+import { AuthProvider } from './contexts/AuthContext'; // اضافه کردن AuthProvider
 
 export default function RootLayout({ children }) {
-  const pathname = usePathname(); // این خط باید اینجا باشد
+  const pathname = usePathname();
 
   return (
     <html lang="fa" dir="rtl">
@@ -13,9 +14,11 @@ export default function RootLayout({ children }) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
       <body>
-        <HeaderHandler />
-        {children}
-        {!pathname?.startsWith('/admin') && <FooterHandler />}
+        <AuthProvider>
+          <HeaderHandler />
+          {children}
+          {!pathname?.startsWith('/admin') && <FooterHandler />}
+        </AuthProvider>
       </body>
     </html>
   );
