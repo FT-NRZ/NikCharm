@@ -1,282 +1,263 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma'
-import { sendEmail } from '../../../../lib/email';
-import bcrypt from 'bcryptjs';
+import { NextResponse } from 'next/server'
+import prisma from '../../../../lib/prisma'
+import bcrypt from 'bcryptjs'
+import nodemailer from 'nodemailer'
 
-export async function POST(request) {
-  console.log('🔥 API Route called - forgot password');
-  
+// تنظیمات ایمیل با اطلاعات شما
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT),
+  secure: false, // true for 465, false for 587
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+})
+
+// تابع ارسال ایمیل
+async function sendVerificationEmail(email, code) {
   try {
-    const body = await request.json();
-    console.log('📧 Received body:', body);
+    console.log('📧 ارسال ایمیل به:', email)
     
-    const { email, step, code, newPassword } = body;
-
-    if (!email?.trim()) {
-      console.log('❌ Email validation failed');
-      return NextResponse.json({
-        success: false,
-        message: 'ایمیل الزامی است',
-      }, { status: 400 });
-    }
-
-    const user = await prisma.users.findUnique({
-      where: { email: email.trim().toLowerCase() },
-    });
-
-    if (!user) {
-      console.log('❌ User not found');
-      return NextResponse.json({
-        success: false,
-        message: 'کاربری با این ایمیل یافت نشد',
-      }, { status: 404 });
-    }
-
-    // مرحله 1: ارسال کد تایید
-    if (step === 'send-code') {
-      // تولید کد تایید 6 رقمی
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-      const codeExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 دقیقه اعتبار
-
-      console.log('🔑 Generated verification code for user:', user.id);
-
-      // ذخیره کد در دیتابیس
-      await prisma.users.update({
-        where: { id: user.id },
-        data: {
-          verification_code: verificationCode,
-          code_expiry: codeExpiry,
-        },
-      });
-
-      // ارسال ایمیل با کد تایید
-      const emailResult = await sendEmail(
-        user.email,
-        'کد تایید بازیابی رمز عبور - فروشگاه چرم',
-        `سلام ${user.name || 'کاربر گرامی'}، کد تایید شما: ${verificationCode}`,
-        `
-          <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f8f9fa;">
-            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-              <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #007bff; margin-bottom: 10px;">🔐 بازیابی رمز عبور</h1>
-                <p style="color: #666; font-size: 16px;">فروشگاه چرم</p>
-              </div>
-              
-              <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <p style="margin: 0 0 15px 0; font-size: 16px;">سلام <strong>${user.name || 'کاربر گرامی'}</strong>,</p>
-                <p style="margin: 0 0 20px 0; color: #555;">برای بازیابی رمز عبور، کد زیر را در سایت وارد کنید:</p>
-                
-                <div style="background: linear-gradient(135deg, #007bff, #0056b3); padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-                  <div style="color: white; font-size: 32px; font-weight: bold; letter-spacing: 5px; font-family: monospace;">
-                    ${verificationCode}
-                  </div>
-                  <p style="color: #e3f2fd; font-size: 14px; margin: 10px 0 0 0;">کد تایید شما</p>
-                </div>
-              </div>
-
-              <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                <p style="margin: 0; color: #856404; font-size: 14px;"><strong>⚠️ نکات مهم:</strong></p>
-                <ul style="margin: 10px 0 0 0; color: #856404; font-size: 14px;">
-                  <li>این کد تا 10 دقیقه اعتبار دارد</li>
-                  <li>فقط یک بار قابل استفاده است</li>
-                  <li>اگر شما درخواست نداده‌اید، نادیده بگیرید</li>
-                </ul>
-              </div>
-
-              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <p style="color: #999; font-size: 12px; margin: 0;">© فروشگاه چرم - سیستم بازیابی رمز عبور</p>
+    const mailOptions = {
+      from: `"نیک چارم" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'کد بازیابی رمز عبور - نیک چارم',
+      html: `
+        <div style="direction: rtl; font-family: Tahoma, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <div style="text-align: center; background-color: #0F2C59; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+            <h2 style="margin: 0;">نیک چارم</h2>
+            <p style="margin: 5px 0 0 0;">بازیابی رمز عبور</p>
+          </div>
+          
+          <div style="padding: 30px; background-color: #f9f9f9;">
+            <p style="font-size: 16px; margin-bottom: 20px;">سلام عزیز،</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">کد تایید برای بازیابی رمز عبور شما:</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <div style="display: inline-block; background-color: #0F2C59; color: white; padding: 15px 30px; border-radius: 8px; font-size: 24px; font-weight: bold; letter-spacing: 3px;">
+                ${code}
               </div>
             </div>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 20px;">⏰ این کد تا ۱۰ دقیقه معتبر است.</p>
+            <p style="font-size: 14px; color: #666;">🔒 از امنیت حساب خود مطمئن شوید.</p>
           </div>
-        `
-      );
+          
+          <div style="padding: 20px; background-color: #fff; border-top: 1px solid #eee; text-align: center;">
+            <p style="font-size: 12px; color: #999; margin: 0;">
+              اگر این درخواست را شما ارسال نکرده‌اید، این ایمیل را نادیده بگیرید.
+            </p>
+            <p style="font-size: 12px; color: #999; margin: 10px 0 0 0;">
+              © ۲۰۲۴ نیک چارم - تمامی حقوق محفوظ است
+            </p>
+          </div>
+        </div>
+      `
+    }
 
-      if (!emailResult.success) {
-        console.log('❌ Email send failed:', emailResult.error);
+    const result = await transporter.sendMail(mailOptions)
+    console.log('✅ ایمیل ارسال شد:', result.messageId)
+    return true
+  } catch (error) {
+    console.error('❌ خطا در ارسال ایمیل:', error)
+    return false
+  }
+}
+
+export async function POST(request) {
+  try {
+    console.log('🔄 درخواست forgot-password دریافت شد')
+    
+    const body = await request.json()
+    console.log('📦 Body:', body)
+    
+    const { email, step, code, newPassword } = body
+
+    if (!email?.trim()) {
+      return NextResponse.json({
+        success: false,
+        message: 'ایمیل الزامی است'
+      }, { status: 400 })
+    }
+
+    // پیدا کردن کاربر
+    const user = await prisma.users.findUnique({
+      where: { email: email.trim().toLowerCase() }
+    })
+
+    if (!user) {
+      return NextResponse.json({
+        success: false,
+        message: 'کاربری با این ایمیل یافت نشد'
+      }, { status: 404 })
+    }
+
+    console.log('👤 کاربر پیدا شد:', user.email)
+
+    // مرحله 1: ارسال کد
+    if (step === 'send-code') {
+      console.log('📤 ارسال کد تایید...')
+      
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+      const codeExpiry = new Date(Date.now() + 10 * 60 * 1000) // 10 دقیقه
+
+      try {
+        // حذف کدهای قبلی
+        await prisma.password_reset_tokens.deleteMany({
+          where: { user_id: user.id }
+        })
+
+        // ایجاد کد جدید
+        await prisma.password_reset_tokens.create({
+          data: {
+            user_id: user.id,
+            email: user.email,
+            token: verificationCode,
+            expires_at: codeExpiry,
+            used: false
+          }
+        })
+
+        console.log('💾 کد در دیتابیس ذخیره شد:', verificationCode)
+
+        // ارسال ایمیل
+        const emailSent = await sendVerificationEmail(user.email, verificationCode)
+        
+        if (emailSent) {
+          console.log('✅ ایمیل ارسال شد')
+          return NextResponse.json({
+            success: true,
+            message: `کد تایید به ایمیل ${user.email} ارسال شد`,
+            // فقط در development نمایش داده شود
+            debug: process.env.NODE_ENV === 'development' ? { 
+              code: verificationCode,
+              email: user.email 
+            } : undefined
+          })
+        } else {
+          console.log('❌ خطا در ارسال ایمیل')
+          return NextResponse.json({
+            success: false,
+            message: 'خطا در ارسال ایمیل. لطفا دوباره تلاش کنید',
+            // برای تست، کد را در development نمایش دهید
+            debug: process.env.NODE_ENV === 'development' ? { 
+              code: verificationCode,
+              note: 'ایمیل ارسال نشد، اما کد برای تست نمایش داده شده'
+            } : undefined
+          }, { status: 500 })
+        }
+      } catch (dbError) {
+        console.error('❌ خطا در دیتابیس:', dbError)
         return NextResponse.json({
           success: false,
-          message: 'خطا در ارسال ایمیل: ' + emailResult.error,
-        }, { status: 500 });
+          message: 'خطا در پردازش درخواست'
+        }, { status: 500 })
       }
-
-      console.log('✅ Verification code sent successfully');
-      return NextResponse.json({
-        success: true,
-        message: 'کد تایید به ایمیل شما ارسال شد',
-      }, { status: 200 });
     }
 
     // مرحله 2: تایید کد
     if (step === 'verify-code') {
+      console.log('🔍 بررسی کد تایید...')
+      
       if (!code?.trim()) {
         return NextResponse.json({
           success: false,
-          message: 'کد تایید الزامی است',
-        }, { status: 400 });
+          message: 'کد تایید الزامی است'
+        }, { status: 400 })
       }
 
-      // بررسی کد و اعتبار آن
-      const currentUser = await prisma.users.findUnique({
-        where: { id: user.id },
-        select: {
-          verification_code: true,
-          code_expiry: true,
-        },
-      });
+      const resetToken = await prisma.password_reset_tokens.findFirst({
+        where: {
+          user_id: user.id,
+          token: code.trim(),
+          used: false,
+          expires_at: { gt: new Date() }
+        }
+      })
 
-      if (!currentUser.verification_code || !currentUser.code_expiry) {
+      if (!resetToken) {
+        console.log('❌ کد تایید نادرست')
         return NextResponse.json({
           success: false,
-          message: 'کد تایید یافت نشد. لطفاً مجدداً درخواست دهید',
-        }, { status: 400 });
+          message: 'کد تایید نادرست یا منقضی شده'
+        }, { status: 400 })
       }
 
-      // بررسی انقضای کد
-      if (new Date() > currentUser.code_expiry) {
-        // پاک کردن کد منقضی شده
-        await prisma.users.update({
-          where: { id: user.id },
-          data: {
-            verification_code: null,
-            code_expiry: null,
-          },
-        });
-
-        return NextResponse.json({
-          success: false,
-          message: 'کد تایید منقضی شده است. لطفاً مجدداً درخواست دهید',
-        }, { status: 400 });
-      }
-
-      // بررسی صحت کد
-      if (currentUser.verification_code !== code.trim()) {
-        return NextResponse.json({
-          success: false,
-          message: 'کد تایید نادرست است',
-        }, { status: 400 });
-      }
-
-      console.log('✅ Verification code validated successfully');
+      console.log('✅ کد تایید صحیح است')
       return NextResponse.json({
         success: true,
-        message: 'کد تایید شد',
-      }, { status: 200 });
+        message: 'کد تایید شد. حالا رمز جدید را وارد کنید'
+      })
     }
 
-    // مرحله 3: تغییر رمز عبور
+    // مرحله 3: تغییر رمز
     if (step === 'reset-password') {
+      console.log('🔑 تغییر رمز عبور...')
+      
       if (!code?.trim() || !newPassword?.trim()) {
         return NextResponse.json({
           success: false,
-          message: 'کد تایید و رمز عبور جدید الزامی است',
-        }, { status: 400 });
+          message: 'کد تایید و رمز جدید الزامی است'
+        }, { status: 400 })
       }
 
       if (newPassword.length < 6) {
         return NextResponse.json({
           success: false,
-          message: 'رمز عبور باید حداقل 6 کاراکتر باشد',
-        }, { status: 400 });
+          message: 'رمز عبور باید حداقل 6 کاراکتر باشد'
+        }, { status: 400 })
       }
 
-      // بررسی مجدد کد تایید
-      const currentUser = await prisma.users.findUnique({
-        where: { id: user.id },
-        select: {
-          verification_code: true,
-          code_expiry: true,
-        },
-      });
+      const resetToken = await prisma.password_reset_tokens.findFirst({
+        where: {
+          user_id: user.id,
+          token: code.trim(),
+          used: false,
+          expires_at: { gt: new Date() }
+        }
+      })
 
-      if (!currentUser.verification_code || !currentUser.code_expiry) {
+      if (!resetToken) {
         return NextResponse.json({
           success: false,
-          message: 'کد تایید یافت نشد',
-        }, { status: 400 });
+          message: 'کد تایید نادرست یا منقضی شده'
+        }, { status: 400 })
       }
 
-      if (new Date() > currentUser.code_expiry) {
-        return NextResponse.json({
-          success: false,
-          message: 'کد تایید منقضی شده است',
-        }, { status: 400 });
-      }
+      // hash رمز جدید
+      const hashedPassword = await bcrypt.hash(newPassword, 10)
 
-      if (currentUser.verification_code !== code.trim()) {
-        return NextResponse.json({
-          success: false,
-          message: 'کد تایید نادرست است',
-        }, { status: 400 });
-      }
+      // بروزرسانی رمز و علامت‌گذاری کد به عنوان استفاده شده
+      await Promise.all([
+        prisma.users.update({
+          where: { id: user.id },
+          data: { passwordhash: hashedPassword }
+        }),
+        prisma.password_reset_tokens.update({
+          where: { id: resetToken.id },
+          data: { used: true }
+        })
+      ])
 
-      // هش کردن رمز جدید
-      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
-
-      // به‌روزرسانی رمز عبور و پاک کردن کد تایید
-      await prisma.users.update({
-        where: { id: user.id },
-        data: {
-          passwordhash: hashedNewPassword,
-          verification_code: null,
-          code_expiry: null,
-        },
-      });
-
-      // ارسال ایمیل تایید تغییر رمز
-      await sendEmail(
-        user.email,
-        'رمز عبور تغییر کرد - فروشگاه نیک چرم',
-        `سلام ${user.name || 'کاربر گرامی'}، رمز عبور شما با موفقیت تغییر کرد.`,
-        `
-          <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f8f9fa;">
-            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-              <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #28a745; margin-bottom: 10px;">✅ رمز عبور تغییر کرد</h1>
-                <p style="color: #666; font-size: 16px;">فروشگاه نیک چرم</p>
-              </div>
-              
-              <div style="background: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <p style="margin: 0 0 10px 0; font-size: 16px;">سلام <strong>${user.name || 'کاربر گرامی'}</strong>,</p>
-                <p style="margin: 0; color: #155724;">رمز عبور حساب کاربری شما با موفقیت تغییر کرد.</p>
-              </div>
-
-              <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px;">
-                <p style="margin: 0 0 10px 0; color: #856404; font-size: 14px;"><strong>🔒 نکات امنیتی:</strong></p>
-                <ul style="margin: 0; color: #856404; font-size: 14px;">
-                  <li>اگر این تغییر توسط شما انجام نشده، فوراً با پشتیبانی تماس بگیرید</li>
-                  <li>رمز عبور خود را با کسی به اشتراک نگذارید</li>
-                  <li>از رمزهای قوی و منحصر به فرد استفاده کنید</li>
-                </ul>
-              </div>
-
-              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <p style="color: #999; font-size: 12px; margin: 0;">تاریخ: ${new Date().toLocaleDateString('fa-IR')}</p>
-                <p style="color: #999; font-size: 12px; margin: 5px 0 0 0;">© فروشگاه نیک چرم</p>
-              </div>
-            </div>
-          </div>
-        `
-      );
-
-      console.log('✅ Password reset successful');
+      console.log('✅ رمز عبور تغییر کرد')
       return NextResponse.json({
         success: true,
-        message: 'رمز عبور با موفقیت تغییر کرد',
-      }, { status: 200 });
+        message: 'رمز عبور با موفقیت تغییر کرد. حالا می‌توانید وارد شوید'
+      })
     }
 
-    // اگر step نامعتبر باشد
     return NextResponse.json({
       success: false,
-      message: 'درخواست نامعتبر',
-    }, { status: 400 });
+      message: 'نوع درخواست نامعتبر'
+    }, { status: 400 })
 
   } catch (error) {
-    console.error('💥 Error in forgot password:', error);
+    console.error('❌ خطا در forgot-password:', error)
     return NextResponse.json({
       success: false,
-      message: 'خطای سرور داخلی',
+      message: 'خطای سرور. لطفا دوباره تلاش کنید',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    }, { status: 500 });
+    }, { status: 500 })
   }
 }

@@ -157,15 +157,34 @@ export default function LoginPage() {
         setIsLoading(false);
         return;
       }
-      
-      localStorage.setItem('token', result.token)
+
+      console.log('✅ Login successful, saving data:', result);
+
+      // ⭐ ذخیره کامل اطلاعات در localStorage
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
       localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userRole', formData.role);
-      
+      localStorage.setItem('userRole', result.user.role);
+
+      console.log('💾 Data saved to localStorage:', {
+        token: !!localStorage.getItem('token'),
+        user: localStorage.getItem('user'),
+        isLoggedIn: localStorage.getItem('isLoggedIn')
+      });
+
+      // ⭐ اعلان به سیستم که localStorage تغییر کرده
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('userLogin', { detail: result.user }));
+
+      // اعلام موفقیت
+      setIsLoading(false);
+      alert(isLogin ? 'ورود موفقیت‌آمیز!' : 'ثبت‌نام موفقیت‌آمیز!');
+
       setTimeout(() => {
-        const redirectPath = formData.role === 'admin' ? '/admin/dashboard' : '/';
+        const redirectPath = result.user.role === 'admin' ? '/admin/dashboard' : '/';
+        console.log('🔄 Redirecting to:', redirectPath);
         handleNavigation(redirectPath);
-      }, 1500);
+      }, 1000);
       
     } catch (error) {
       console.error('Error:', error);

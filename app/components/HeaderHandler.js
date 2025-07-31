@@ -6,22 +6,18 @@ import { useAuth } from '../contexts/AuthContext'
 
 export default function HeaderHandler() {
   const pathname = usePathname();
+  
+  // ✅ Hooks همیشه در بالای کامپوننت فراخوانی می‌شوند
+  const authData = useAuth();
+  
+  // بررسی شرطی بعد از فراخوانی hook
   const showHeader = ['/', '/about', '/contact'].includes(pathname);
   
   if (!showHeader) return null;
 
-  // استفاده امن از useAuth
-  let user = null;
-  let isAuthenticated = false;
-  
-  try {
-    const authData = useAuth();
-    user = authData?.user;
-    isAuthenticated = authData?.isAuthenticated || false;
-  } catch (error) {
-    // اگر AuthProvider موجود نیست، مقادیر پیش‌فرض استفاده می‌شود
-    console.warn('AuthProvider not found. Using default values.');
-  }
+  // استخراج امن داده‌ها
+  const user = authData?.user || null;
+  const isAuthenticated = authData?.isAuthenticated || false;
   
   return (
     <div>

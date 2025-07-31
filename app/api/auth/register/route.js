@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/prisma'
+import prisma from '../../../../lib/prisma'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
@@ -8,34 +8,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'nikcharm-secret-key-2024'
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { 
-      username, 
-      email, 
-      password, 
-      confirmPassword,
-      phoneNumber, 
-      role 
-    } = body
+    const { username, email, password, confirmPassword, phoneNumber, role } = body
+
+    console.log('📝 Register attempt:', { username, email, role });
 
     // اعتبارسنجی
-    if (!username?.trim()) {
+    if (!username?.trim() || !email?.trim() || !password?.trim()) {
       return NextResponse.json({
         success: false,
-        message: 'نام کاربری الزامی است'
-      }, { status: 400 })
-    }
-
-    if (!email?.trim()) {
-      return NextResponse.json({
-        success: false,
-        message: 'ایمیل الزامی است'
-      }, { status: 400 })
-    }
-
-    if (!password || password.length < 8) {
-      return NextResponse.json({
-        success: false,
-        message: 'رمز عبور باید حداقل 8 کاراکتر باشد'
+        message: 'تمام فیلدها الزامی هستند'
       }, { status: 400 })
     }
 
@@ -46,19 +27,19 @@ export async function POST(request) {
       }, { status: 400 })
     }
 
-    if (!role || !['admin', 'customer'].includes(role)) {
+    if (password.length < 6) {
       return NextResponse.json({
         success: false,
-        message: 'نقش کاربری معتبر نیست'
+        message: 'رمز عبور باید حداقل 6 کاراکتر باشد'
       }, { status: 400 })
     }
 
-    // بررسی تکراری نبودن
+    // بررسی تکراری بودن
     const existingUser = await prisma.users.findFirst({
       where: {
         OR: [
-          { username: username.trim().toLowerCase() },
-          { email: email.trim().toLowerCase() }
+          { email: email.trim().toLowerCase() },
+          { username: username.trim().toLowerCase() }
         ]
       }
     })
@@ -66,84 +47,75 @@ export async function POST(request) {
     if (existingUser) {
       return NextResponse.json({
         success: false,
-        message: 'این نام کاربری یا ایمیل قبلاً ثبت شده است'
+        message: 'کاربری با این ایمیل یا نام کاربری قبلاً ثبت شده است'
       }, { status: 400 })
     }
 
-    // ایجاد نقش اگر وجود ندارد
-    let userRole = await prisma.roles.findFirst({
-      where: { name: role }
-    })
-
-    if (!userRole) {
-      userRole = await prisma.roles.create({
-        data: { name: role }
-      })
-    }
-
-    // Hash رمز عبور
-    const hashedPassword = await bcrypt.hash(password, 12)
+    // hash رمز عبور
+    const hashedPassword = await bcrypt.hash(password, 10)
 
     // ایجاد کاربر
     const newUser = await prisma.users.create({
       data: {
         username: username.trim().toLowerCase(),
         email: email.trim().toLowerCase(),
-        full_name: username.trim(),
         passwordhash: hashedPassword,
-        phone_number: phoneNumber?.trim(),
+        full_name: username.trim(),
+        phone_number: phoneNumber?.trim() || null,
         isactive: true
       }
     })
 
-    // تخصیص نقش
-    await prisma.user_roles.create({
-      data: {
-        userid: newUser.id,
-        roleid: userRole.id
-      }
-    })
+    // تنظیم role
+    const defaultRole = role || 'customer'
+    
+    try {
+      let roleRecord = await prisma.roles.findFirst({
+        where: { name: defaultRole }
+      })
 
-    // تولید Token
+      if (!roleRecord) {
+        roleRecord = await prisma.roles.create({
+          data: { name: defaultRole }
+        })
+      }
+
+      // ⭐ اصلاح نام فیلدها
+      await prisma.user_roles.create({
+        data: {
+          userid: newUser.id,    // مطابق schema
+          roleid: roleRecord.id  // مطابق schema
+        }
+      })
+    } catch (roleError) {
+      console.error('⚠️ Role assignment failed:', roleError);
+    }
+
+    // JWT token
     const token = jwt.sign(
-      { 
-        userId: newUser.id, 
-        username: newUser.username,
-        email: newUser.email,
-        role: role
-      },
+      { userId: newUser.id, email: newUser.email, role: defaultRole },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '24h' }
     )
-
-    // ثبت رکورد ورود
-    await prisma.login_records.create({
-      data: {
-        user_id: newUser.id,
-        token: token,
-        expirationdate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      }
-    })
 
     return NextResponse.json({
       success: true,
-      message: 'حساب کاربری با موفقیت ایجاد شد',
-      token: token,
+      message: 'ثبت‌نام با موفقیت انجام شد',
+      token,
       user: {
         id: newUser.id,
         username: newUser.username,
         email: newUser.email,
         fullName: newUser.full_name,
-        role: role
+        role: defaultRole
       }
-    }, { status: 201 })
+    })
 
   } catch (error) {
-    console.error('خطا در ثبت‌نام:', error)
-    
+    console.error('❌ Registration error:', error)
     return NextResponse.json({
       success: false,
-      message: 'خطا در ایجاد حساب کاربری'
+      message: 'خطا در ثبت‌نام: ' + error.message
     }, { status: 500 })
   }
 }
