@@ -1,8 +1,10 @@
+// کل فایل layout.jsx را با این جایگزین کن:
+
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { HiOutlineViewGrid, HiOutlinePlus, HiOutlinePencilAlt, HiChevronDown } from "react-icons/hi";
+import { HiOutlineViewGrid, HiOutlinePlus, HiOutlinePencilAlt, HiChevronDown, HiOutlineHome } from "react-icons/hi";
 
 export default function AdminLayout({ children }) {
   const [openProducts, setOpenProducts] = useState(false);
@@ -11,8 +13,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <>
-      
-         {/* منوی موبایل */}
+      {/* منوی موبایل */}
       <div className="lg:hidden fixed top-0 right-0 left-0 z-40 bg-white/95 shadow">
         <div className="flex items-center justify-center px-4 py-3">
           <button
@@ -26,6 +27,16 @@ export default function AdminLayout({ children }) {
         {mobileMenu && (
           <div className="absolute right-0 left-0 top-[60px] z-50 bg-white rounded-b-2xl shadow-2xl m-4 p-4 animate-slideDown">
             <nav className="flex flex-col gap-4">
+              {/* گزینه خانه بالای منو موبایل */}
+              <SidebarLink
+                href="/"
+                icon={<HiOutlineHome size={20} />}
+                active={pathname === "/"}
+                onClick={() => setMobileMenu(false)}
+              >
+                خانه
+              </SidebarLink>
+              
               <div>
                 <button
                   className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-right transition-all duration-300 hover:bg-blue-100 hover:text-blue-700 text-gray-700 cursor-pointer w-full relative"
@@ -43,6 +54,7 @@ export default function AdminLayout({ children }) {
                     openProducts ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                   }`}
                 >
+                  {/* زیرمنوهای مدیریت محصولات */}
                   <SidebarLink
                     href="/admin/dashboard"
                     icon={<HiOutlineViewGrid size={20} />}
@@ -83,8 +95,29 @@ export default function AdminLayout({ children }) {
                   >
                     افزودن دسته‌بندی
                   </SidebarLink>
+                  <SidebarLink
+                    href="/admin/editCategory"
+                    icon={<HiOutlinePencilAlt size={20} />}
+                    active={pathname === "/admin/editCategory"}
+                    onClick={() => setMobileMenu(false)}
+                  >
+                    ویرایش دسته‌بندی
+                  </SidebarLink>
                 </div>
               </div>
+              
+              {/* مدیریت کاربران در منوی موبایل */}
+              <SidebarLink
+                href="/admin/Users"
+                icon={<HiOutlineViewGrid size={20} />}
+                active={pathname === "/admin/Users"}
+                onClick={() => {
+                  setMobileMenu(false);
+                  setOpenProducts(false);
+                }}
+              >
+                مدیریت کاربران
+              </SidebarLink>
             </nav>
           </div>
         )}
@@ -101,16 +134,28 @@ export default function AdminLayout({ children }) {
       <div className="min-h-screen flex flex-row bg-gradient-to-br from-blue-50 via-white to-cyan-50 pt-16 lg:pt-0">
         <aside
           dir="rtl"
-          className="w-80 bg-white border-r-4 border-blue-200 shadow-2xl flex-col py-8 px-4 sticky top-0 h-screen z-20 transition-all duration-500 hidden lg:flex"
+          className="w-80 bg-white border-r-4 border-blue-200 shadow-2xl flex-col py-8 px-4 sticky top-0 h-screen z-20 transition-all duration-500 hidden lg:flex overflow-y-auto"
           style={{
             boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
             background: "rgba(255,255,255,0.85)",
             backdropFilter: "blur(6px)"
           }}
         >
-          <h2 className="text-2xl font-extrabold text-blue-700 mb-10 text-center tracking-tight drop-shadow">داشبورد مدیریت</h2>
-          <nav className="flex flex-col gap-6">
-            <div>
+          {/* گزینه خانه بالای منو دسکتاپ */}
+          <div className="mb-4 flex justify-start">
+            <SidebarLink
+              href="/"
+              icon={<HiOutlineHome size={20} />}
+              active={pathname === "/"}
+            >
+              خانه
+            </SidebarLink>
+          </div>
+          
+          <h2 className="text-2xl font-extrabold text-blue-700 mb-6 text-center tracking-tight drop-shadow">داشبورد مدیریت</h2>
+          
+          <nav className="flex flex-col gap-4 flex-1">
+            <div className="space-y-4">
               <button
                 className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-right transition-all duration-300 hover:bg-blue-100 hover:text-blue-700 text-gray-700 cursor-pointer w-full relative"
                 onClick={() => setOpenProducts((prev) => !prev)}
@@ -119,50 +164,71 @@ export default function AdminLayout({ children }) {
                 مدیریت محصولات
                 <HiChevronDown size={18} className={`transition-transform duration-300 ml-auto ${openProducts ? "rotate-180" : ""}`} />
               </button>
+              
               <div
-                className={`flex flex-col gap-4 pr-6 mt-2 transition-all duration-300 overflow-hidden ${
+                className={`transition-all duration-300 overflow-hidden ${
                   openProducts ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
-                <SidebarLink
-                  href="/admin/dashboard"
-                  icon={<HiOutlineViewGrid size={20} />}
-                  active={pathname === "/admin/dashboard"}
-                >
-                  تمام محصولات
-                </SidebarLink>
-                <SidebarLink
-                  href="/admin/createProduct"
-                  icon={<HiOutlinePlus size={20} />}
-                  active={pathname === "/admin/createProduct"}
-                >
-                  ایجاد محصول جدید
-                </SidebarLink>
-                <SidebarLink
-                  href="/admin/EditProduct"
-                  icon={<HiOutlinePencilAlt size={20} />}
-                  active={pathname === "/admin/EditProduct"}
-                >
-                  ویرایش محصولات
-                </SidebarLink>
-                <SidebarLink
-                  href="/admin/editSlider"
-                  icon={<HiOutlinePencilAlt size={20} />}
-                  active={pathname === "/admin/editSlider"}
-                >
-                  ویرایش اسلایدر
-                </SidebarLink>
-                <SidebarLink
-                  href="/admin/createCategory"
-                  icon={<HiOutlinePlus size={20} />}
-                  active={pathname === "/admin/createCategory"}
-                >
-                  افزودن دسته‌بندی
-                </SidebarLink>
+                <div className="flex flex-col gap-2 pr-6">
+                  <SidebarLink
+                    href="/admin/dashboard"
+                    icon={<HiOutlineViewGrid size={20} />}
+                    active={pathname === "/admin/dashboard"}
+                  >
+                    تمام محصولات
+                  </SidebarLink>
+                  <SidebarLink
+                    href="/admin/createProduct"
+                    icon={<HiOutlinePlus size={20} />}
+                    active={pathname === "/admin/createProduct"}
+                  >
+                    ایجاد محصول جدید
+                  </SidebarLink>
+                  <SidebarLink
+                    href="/admin/EditProduct"
+                    icon={<HiOutlinePencilAlt size={20} />}
+                    active={pathname === "/admin/EditProduct"}
+                  >
+                    ویرایش محصولات
+                  </SidebarLink>
+                  <SidebarLink
+                    href="/admin/editSlider"
+                    icon={<HiOutlinePencilAlt size={20} />}
+                    active={pathname === "/admin/editSlider"}
+                  >
+                    ویرایش اسلایدر
+                  </SidebarLink>
+                  <SidebarLink
+                    href="/admin/createCategory"
+                    icon={<HiOutlinePlus size={20} />}
+                    active={pathname === "/admin/createCategory"}
+                  >
+                    افزودن دسته‌بندی
+                  </SidebarLink>
+                  <SidebarLink
+                    href="/admin/editCategory"
+                    icon={<HiOutlinePencilAlt size={20} />}
+                    active={pathname === "/admin/editCategory"}
+                  >
+                    ویرایش دسته‌بندی
+                  </SidebarLink>
+                </div>
               </div>
             </div>
+            
+            {/* مدیریت کاربران در منوی دسکتاپ */}
+            <div className="mt-4">
+              <SidebarLink
+                href="/admin/Users"
+                icon={<HiOutlineViewGrid size={20} />}
+                active={pathname === "/admin/Users"}
+                onClick={() => setOpenProducts(false)}
+              >
+                مدیریت کاربران
+              </SidebarLink>
+            </div>
           </nav>
-
         </aside>
         <main dir="rtl" className="flex-1 p-8">{children}</main>
       </div>

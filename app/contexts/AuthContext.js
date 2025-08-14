@@ -71,11 +71,11 @@ export const AuthProvider = ({ children }) => {
       const savedUser = localStorage.getItem('user')
       const isLoggedIn = localStorage.getItem('isLoggedIn')
 
-      if (!token || !savedUser || isLoggedIn !== 'true') {
-        console.log('❌ No auth data found in localStorage');
-        setLoading(false)
-        return
-      }
+    if (!token || !savedUser || isLoggedIn !== 'true') {
+      // console.log('❌ No auth data found in localStorage'); // حذف این خط
+      setLoading(false)
+      return
+    }
 
       // اول از localStorage بارگذاری کن
       try {

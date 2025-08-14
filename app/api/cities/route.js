@@ -1,3 +1,5 @@
+// app/api/cities/route.js - نسخه اصلاح شده:
+
 import { NextResponse } from 'next/server';
 import prisma from '../../../lib/prisma';
 
@@ -15,11 +17,10 @@ export async function GET(request) {
       }, { status: 400 });
     }
 
-    // استفاده از model cities
+    // ✅ تبدیل provinceId به BigInt
     const cities = await prisma.cities.findMany({
       where: {
-        province_id: BigInt(provinceId),
-        status: 1 // فقط شهرهای فعال
+        province_id: BigInt(provinceId)
       },
       select: {
         id: true,
@@ -34,11 +35,12 @@ export async function GET(request) {
 
     console.log(`✅ ${cities.length} شهر برای استان ${provinceId} یافت شد`);
 
-    // تبدیل BigInt به Number
+    // ✅ تبدیل BigInt به Number
     const formattedCities = cities.map(city => ({
       id: Number(city.id),
       name: city.name,
-      province_id: Number(city.province_id)
+      province_id: Number(city.province_id),
+      status: city.status
     }));
 
     return NextResponse.json({
@@ -49,10 +51,16 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('❌ خطا در دریافت شهرها:', error);
+    console.error('❌ جزئیات خطا:', {
+      message: error.message,
+      code: error.code,
+      provinceId: provinceId
+    });
+    
     return NextResponse.json({
       success: false,
       message: 'خطا در دریافت شهرها: ' + error.message,
-      error: error.stack
+      error: error.message
     }, { status: 500 });
   }
 }

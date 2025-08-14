@@ -146,8 +146,8 @@ export default function EditProductPage() {
               />
               {/* نمایش قیمت‌ها */}
               <div className="flex justify-between w-full mt-7 px-1 text-xs text-gray-600 font-bold">
-                <span>{priceRange.start.toLocaleString()} تومان</span>
                 <span>{priceRange.end.toLocaleString()} تومان</span>
+                <span>{priceRange.start.toLocaleString()} تومان</span>
               </div>
             </div>
           </div>

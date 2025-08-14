@@ -91,6 +91,7 @@ model products {
   size               Int?
   material           String?          @db.VarChar(100)
   information        String?
+  image_url          String?
   number_of_comments Int?             @default(0)
   stock_quantity     Int?             @default(0)
   comments           comments[]

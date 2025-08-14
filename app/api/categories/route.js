@@ -1,9 +1,11 @@
+// app/api/categories/route.js - فقط PUT اضافه کن:
+
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// گرفتن لیست دسته‌بندی‌ها
+// GET موجود - دست نخور
 export async function GET() {
   const categories = await prisma.categories.findMany({
     include: {
@@ -14,7 +16,7 @@ export async function GET() {
   return NextResponse.json({ categories });
 }
 
-// افزودن دسته‌بندی جدید
+// POST موجود - دست نخور
 export async function POST(request) {
   try {
     const data = await request.json();
@@ -37,6 +39,36 @@ export async function POST(request) {
   } catch (error) {
     return NextResponse.json(
       { error: "خطا در ایجاد دسته‌بندی" },
+      { status: 500 }
+    );
+  }
+}
+
+// فقط این PUT جدید اضافه کن:
+export async function PUT(request) {
+  try {
+    const { id, name } = await request.json();
+    
+    if (!id || !name) {
+      return NextResponse.json(
+        { error: "شناسه و نام دسته‌بندی الزامی است" },
+        { status: 400 }
+      );
+    }
+
+    const updatedCategory = await prisma.categories.update({
+      where: { id: parseInt(id) },
+      data: { name: name },
+    });
+
+    return NextResponse.json({
+      message: "دسته‌بندی با موفقیت ویرایش شد",
+      category: updatedCategory
+    });
+  } catch (error) {
+    console.error('Error updating category:', error);
+    return NextResponse.json(
+      { error: 'خطا در به‌روزرسانی دسته‌بندی' },
       { status: 500 }
     );
   }

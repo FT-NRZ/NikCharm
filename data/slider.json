@@ -1,7 +1,17 @@
 [
   {
     "id": 1,
-    "imageUrl": "/uploads/1752313065681_a81a410637bec26914eefc255b7b27be.jpg",
+    "imageUrl": "/uploads/1754039962618_Desktop_-_2.png",
     "order": 1
+  },
+  {
+    "id": 2,
+    "imageUrl": "/uploads/1754039968713_Desktop_-_1.png",
+    "order": 2
+  },
+  {
+    "id": 3,
+    "imageUrl": "/uploads/1754039980419_Dif_cil_mesmo___escolher_uma_s________Qual_a_sua_favorita____classe__tiracolokora__invernoclasse24__inverno24__couro__courolegitimo__classeofc.jpg",
+    "order": 3
   }
 ]

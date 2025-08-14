@@ -1,3 +1,5 @@
+// app/api/addresses/route.js - نسخه کاملاً درست:
+
 import { NextResponse } from 'next/server';
 import prisma from '../../../lib/prisma';
 import jwt from 'jsonwebtoken';
@@ -11,6 +13,7 @@ export async function GET(request) {
     const authorization = request.headers.get('authorization');
     
     if (!authorization || !authorization.startsWith('Bearer ')) {
+      console.log('❌ Authorization header نامعتبر');
       return NextResponse.json({
         success: false,
         message: 'لطفا وارد حساب کاربری خود شوید'
@@ -18,91 +21,85 @@ export async function GET(request) {
     }
 
     const token = authorization.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
+    let decoded;
+    
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+      console.log('✅ Token معتبر:', decoded.userId);
+    } catch (jwtError) {
+      console.error('❌ JWT Error:', jwtError.message);
+      return NextResponse.json({
+        success: false,
+        message: 'توکن نامعتبر است'
+      }, { status: 401 });
+    }
+    
     const userId = decoded.userId || decoded.id;
     
     if (!userId) {
+      console.log('❌ UserId یافت نشد');
       return NextResponse.json({
         success: false,
         message: 'اطلاعات کاربر نامعتبر'
       }, { status: 401 });
     }
 
-    // دریافت آدرس‌ها با relations
+    console.log(`🔍 جستجوی آدرس‌ها برای کاربر: ${userId}`);
+
+    // ✅ دریافت آدرس‌ها بدون relations
     const addresses = await prisma.address.findMany({
       where: {
         user_id: parseInt(userId)
       },
-      include: {
-        province: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        city_info: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+      select: {
+        id: true,
+        address: true,
+        city: true,
+        house_no: true,
+        phone_number: true,
+        postalcode: true,
+        created_at: true,
+        updated_at: true
       },
       orderBy: {
         created_at: 'desc'
       }
     });
 
-    console.log(`✅ ${addresses.length} آدرس یافت شد`);
+    console.log(`📦 ${addresses.length} آدرس یافت شد`);
 
-    if (addresses.length === 0) {
-      return NextResponse.json({
-        success: true,
-        data: [],
-        message: 'هیچ آدرسی یافت نشد'
-      });
-    }
-
-    // فرمت کردن آدرس‌ها
+    // ✅ تبدیل BigInt اگر وجود داشته باشد
     const formattedAddresses = addresses.map(addr => ({
-      id: addr.id,
+      id: typeof addr.id === 'bigint' ? Number(addr.id) : addr.id,
       address: addr.address,
+      city: addr.city || 'نامشخص',
       house_no: addr.house_no,
       phone_number: addr.phone_number,
       postalcode: addr.postalcode,
-      city: addr.city,
-      province: addr.province ? {
-        id: Number(addr.province.id),
-        name: addr.province.name
-      } : null,
-      city_info: addr.city_info ? {
-        id: Number(addr.city_info.id),
-        name: addr.city_info.name
-      } : null,
-      state_id: addr.state_id ? Number(addr.state_id) : null,
-      city_id: addr.city_id ? Number(addr.city_id) : null,
       created_at: addr.created_at,
       updated_at: addr.updated_at
     }));
 
     return NextResponse.json({
       success: true,
-      data: formattedAddresses,
-      message: 'آدرس‌ها با موفقیت دریافت شدند'
+      data: formattedAddresses
     });
 
   } catch (error) {
-    console.error('❌ خطا در GET:', error);
+    console.error('❌ خطا در دریافت آدرس‌ها:', error);
+    console.error('❌ Stack:', error.stack);
+    
     return NextResponse.json({
       success: false,
-      message: 'خطا در دریافت آدرس‌ها: ' + error.message,
-      error: error.stack
+      error: 'خطای سرور در دریافت آدرس‌ها',
+      message: error.message
     }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
-    console.log('📤 درخواست ایجاد آدرس جدید...');
+    console.log('📝 شروع ایجاد آدرس جدید...');
     
     const authorization = request.headers.get('authorization');
     
@@ -117,114 +114,73 @@ export async function POST(request) {
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.userId || decoded.id;
 
-    const body = await request.json();
-    console.log('📦 داده‌های دریافتی:', body);
+    const addressData = await request.json();
+    console.log('📝 داده‌های دریافتی:', addressData);
 
     // اعتبارسنجی
-    if (!body.address || !body.phone_number || !body.province_id || !body.city_id) {
+    if (!addressData.address || !addressData.phone_number) {
       return NextResponse.json({
         success: false,
-        message: 'تمام فیلدهای الزامی را پر کنید (آدرس، تلفن، استان، شهر)'
+        error: 'آدرس و شماره تلفن الزامی است'
       }, { status: 400 });
     }
 
-    // بررسی وجود استان و شهر
-    try {
-      const province = await prisma.provinces.findUnique({
-        where: { id: BigInt(body.province_id) }
-      });
+    // ✅ ایجاد آدرس با فیلدهای ضروری
+    const createData = {
+      user_id: parseInt(userId),
+      address: addressData.address,
+      city: addressData.city || 'نامشخص',
+      house_no: addressData.house_no || null,
+      phone_number: addressData.phone_number,
+      postalcode: addressData.postalcode || null,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
 
-      const city = await prisma.cities.findUnique({
-        where: { id: BigInt(body.city_id) }
-      });
-
-      if (!province) {
-        return NextResponse.json({
-          success: false,
-          message: 'استان انتخابی نامعتبر است'
-        }, { status: 400 });
-      }
-
-      if (!city) {
-        return NextResponse.json({
-          success: false,
-          message: 'شهر انتخابی نامعتبر است'
-        }, { status: 400 });
-      }
-
-      console.log('✅ استان و شهر معتبر هستند');
-
-    } catch (validationError) {
-      console.error('❌ خطا در اعتبارسنجی:', validationError);
-      return NextResponse.json({
-        success: false,
-        message: 'خطا در اعتبارسنجی استان/شهر: ' + validationError.message
-      }, { status: 400 });
+    // اضافه کردن state_id و city_id فقط اگر موجود باشند
+    if (addressData.state_id) {
+      createData.state_id = BigInt(addressData.state_id);
+    }
+    if (addressData.city_id) {
+      createData.city_id = BigInt(addressData.city_id);
     }
 
-    // ایجاد آدرس جدید
     const newAddress = await prisma.address.create({
-      data: {
-        user_id: parseInt(userId),
-        address: body.address.trim(),
-        city: body.city || 'نامشخص',
-        house_no: body.house_no || null,
-        phone_number: body.phone_number.trim(),
-        postalcode: body.postalcode || null,
-        state_id: BigInt(body.province_id),
-        city_id: BigInt(body.city_id)
-      },
-      include: {
-        province: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        city_info: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
+      data: createData
     });
 
-    console.log('✅ آدرس ایجاد شد:', newAddress.id);
+    console.log('✅ آدرس جدید ایجاد شد:', newAddress.id);
 
-    // فرمت پاسخ
+    // ✅ تبدیل BigInt برای response
     const formattedAddress = {
-      id: newAddress.id,
+      id: typeof newAddress.id === 'bigint' ? Number(newAddress.id) : newAddress.id,
       address: newAddress.address,
       city: newAddress.city,
       house_no: newAddress.house_no,
       phone_number: newAddress.phone_number,
       postalcode: newAddress.postalcode,
-      province: newAddress.province ? {
-        id: Number(newAddress.province.id),
-        name: newAddress.province.name
-      } : null,
-      city_info: newAddress.city_info ? {
-        id: Number(newAddress.city_info.id),
-        name: newAddress.city_info.name
-      } : null,
-      state_id: Number(newAddress.state_id),
-      city_id: Number(newAddress.city_id),
-      created_at: newAddress.created_at
+      created_at: newAddress.created_at,
+      updated_at: newAddress.updated_at
     };
 
     return NextResponse.json({
       success: true,
-      message: 'آدرس با موفقیت ثبت شد',
-      data: formattedAddress
+      data: formattedAddress,
+      message: 'آدرس با موفقیت اضافه شد'
     });
 
   } catch (error) {
-    console.error('❌ خطا در POST:', error);
+    console.error('❌ خطا در ایجاد آدرس:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    
     return NextResponse.json({
       success: false,
-      message: 'خطا در ثبت آدرس: ' + error.message,
-      error: error.stack
+      error: 'خطای سرور در ایجاد آدرس',
+      message: error.message
     }, { status: 500 });
   }
 }

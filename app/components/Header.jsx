@@ -15,21 +15,50 @@ const Header = () => {
   const [isProductMenuOpen, setIsProductMenuOpen] = useState(false);
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState(null);
   const [activeTab, setActiveTab] = useState('home');
+  const [cartCount, setCartCount] = useState(0);
+  const [categories, setCategories] = useState([]);
   const router = useRouter();
   const searchRef = useRef(null);
   const mobileMenuRef = useRef(null);
-  
+
   // استفاده از AuthContext برای مدیریت کاربر
   const { user, isAuthenticated, loading } = useAuth();
 
+  // تعداد محصولات موجود در سبد خرید را از localStorage بخوان و هر بار تغییر کند آپدیت کن
+  useEffect(() => {
+    const updateCartCount = () => {
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        setCartCount(count);
+      } catch {
+        setCartCount(0);
+      }
+    };
+
+    updateCartCount();
+
+    window.addEventListener('storage', updateCartCount);
+    const interval = setInterval(updateCartCount, 500);
+
+    return () => {
+      window.removeEventListener('storage', updateCartCount);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // دریافت دسته‌بندی‌ها از دیتابیس
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data.categories || []));
+  }, []);
+
+  // منوی اصلی
   const menuItems = [
     { title: 'خانه', href: '/' },
     {
-      title: 'محصولات', href: '/products', hasSubmenu: true, submenuItems: [
-        { title: 'محصولات زنانه', href: '/products?category=women' },
-        { title: 'محصولات مردانه', href: '/products?category=men' },
-        { title: 'اکسسوری‌ها', href: '/products?category=accessories' },
-      ]
+      title: 'محصولات', href: '/products', hasSubmenu: true
     },
     { title: 'درباره ما', href: '/about' },
     { title: 'تماس با ما', href: '/contact' },
@@ -46,19 +75,16 @@ const Header = () => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setIsSearchOpen(false);
       }
-      
       if (mobileMenuRef.current && 
           !mobileMenuRef.current.contains(event.target) && 
           !event.target.closest('[data-menu-toggle]')) {
         setIsMobileMenuOpen(false);
       }
     };
-    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -83,7 +109,6 @@ const Header = () => {
     }
   };
 
-  // اگر در حال بارگذاری است، چیزی نمایش نده
   if (loading) {
     return (
       <header className="sticky top-0 z-50 bg-white/95 shadow-md py-3">
@@ -99,9 +124,9 @@ const Header = () => {
   return (
     <>
       <header className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/95 shadow-lg py-2 backdrop-blur-sm' : 'bg-[#F2F2F2] py-3 shadow-md'}`}>
-        <div className="container mx-auto px-4">
+        <div className=" mx-auto px-0">
           {/* Desktop Layout */}
-          <div className="hidden md:flex items-center justify-between h-12">
+          <div className="hidden md:flex items-center justify-between h-12 px-4">
             {/* Logo - سمت راست */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -123,7 +148,7 @@ const Header = () => {
             {/* Navigation - وسط */}
             <div className="flex-1 flex items-center justify-center max-w-2xl mx-8">
               <nav className="flex items-center gap-8" dir="rtl">
-                {menuItems.map((item) => (
+                {menuItems.map((item, idx) => (
                   <div key={item.href} className="relative">
                     {item.hasSubmenu ? (
                       <div
@@ -131,13 +156,19 @@ const Header = () => {
                         onMouseEnter={() => setIsProductMenuOpen(true)}
                         onMouseLeave={() => setIsProductMenuOpen(false)}
                       >
-                        <button className="flex items-center text-gray-900 hover:text-gray-700 transition-colors duration-200 font-medium text-sm">
+                        <button
+                          className="flex items-center text-gray-900 hover:text-gray-700 transition-colors duration-200 font-medium text-sm"
+                          onClick={() => {
+                            setActiveTab('products');
+                            router.push('/products');
+                          }}
+                          type="button"
+                        >
                           {item.title}
                           <svg className="w-4 h-4 mr-1 mt-0.5 transform group-hover:rotate-180 transition-transform" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                           </svg>
                         </button>
-                        
                         <AnimatePresence>
                           {isProductMenuOpen && (
                             <motion.div
@@ -147,16 +178,21 @@ const Header = () => {
                               transition={{ duration: 0.15 }}
                               className="absolute right-0 mt-2 py-2 bg-white rounded-xl shadow-lg border border-gray-100 z-50 w-52"
                             >
-                              {item.submenuItems.map((subItem) => (
-                                <Link
-                                  key={subItem.href}
-                                  href={subItem.href}
-                                  className="flex items-center px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#0F2C59] transition-colors"
-                                >
-                                  <span className="ml-2 text-[#0F2C59]">•</span>
-                                  {subItem.title}
-                                </Link>
-                              ))}
+                              {categories.length === 0 ? (
+                                <span className="block px-4 py-2 text-gray-400 text-sm">دسته‌بندی‌ای وجود ندارد</span>
+                              ) : (
+                                categories.map((cat) => (
+                                  <Link
+                                    key={cat.id}
+                                    href={`/products?category=${cat.id}`}
+                                    className="flex items-center px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#0F2C59] transition-colors"
+                                    onClick={() => setIsProductMenuOpen(false)}
+                                  >
+                                    <span className="ml-2 text-[#0F2C59]">•</span>
+                                    {cat.name}
+                                  </Link>
+                                ))
+                              )}
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -198,14 +234,6 @@ const Header = () => {
                 </button>
               </div>
 
-              {/* Favorites */}
-              <Link 
-                href="/favorites" 
-                className="text-gray-900 hover:text-gray-700 transition-colors duration-200 p-1.5 rounded-lg hover:bg-gray-100"
-              >
-                <HiOutlineHeart size={20} />
-              </Link>
-
               {/* Cart */}
               <Link 
                 href="/cart" 
@@ -213,7 +241,7 @@ const Header = () => {
               >
                 <HiOutlineShoppingBag size={20} />
                 <span className="absolute -top-1 -right-1 bg-[#0F2C59] text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                  2
+                  {cartCount}
                 </span>
               </Link>
 
@@ -234,7 +262,7 @@ const Header = () => {
           </div>
 
           {/* Mobile Layout */}
-          <div className="md:hidden flex items-center justify-between h-12">
+          <div className="md:hidden flex items-center justify-between h-12 px-4">
             {/* Mobile Left Menu */}
             <div className="flex items-center">
               <button
@@ -270,7 +298,7 @@ const Header = () => {
               <Link href="/cart" className="relative text-gray-900 hover:text-gray-700 transition-colors p-1.5 rounded-lg">
                 <HiOutlineShoppingBag size={20} />
                 <span className="absolute -top-1 -right-1 bg-[#0F2C59] text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                  2
+                  {cartCount}
                 </span>
               </Link>
             </div>
@@ -396,17 +424,21 @@ const Header = () => {
                                   exit={{ height: 0, opacity: 0 }}
                                   className="overflow-hidden mr-4 border-r-2 border-gray-100"
                                 >
-                                  {item.submenuItems.map((subItem) => (
-                                    <Link
-                                      key={subItem.href}
-                                      href={subItem.href}
-                                      onClick={() => setIsMobileMenuOpen(false)}
-                                      className="flex items-center py-3 px-6 text-gray-600 hover:text-[#0F2C59] hover:bg-gray-50 transition-all duration-200 group rounded-lg mr-2"
-                                    >
-                                      <div className="w-1.5 h-1.5 bg-[#0F2C59] rounded-full ml-3 group-hover:scale-125 transition-transform"></div>
-                                      <span className="text-sm">{subItem.title}</span>
-                                    </Link>
-                                  ))}
+                                  {categories.length === 0 ? (
+                                    <span className="block px-4 py-2 text-gray-400 text-sm">دسته‌بندی‌ای وجود ندارد</span>
+                                  ) : (
+                                    categories.map((cat) => (
+                                      <Link
+                                        key={cat.id}
+                                        href={`/products?category=${cat.id}`}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="flex items-center py-3 px-6 text-gray-600 hover:text-[#0F2C59] hover:bg-gray-50 transition-all duration-200 group rounded-lg mr-2"
+                                      >
+                                        <div className="w-1.5 h-1.5 bg-[#0F2C59] rounded-full ml-3 group-hover:scale-125 transition-transform"></div>
+                                        <span className="text-sm">{cat.name}</span>
+                                      </Link>
+                                    ))
+                                  )}
                                 </motion.div>
                               )}
                             </AnimatePresence>
@@ -425,20 +457,6 @@ const Header = () => {
                     ))}
                   </ul>
                 </nav>
-
-                {/* Mobile Menu Footer */}
-                <div className="p-4 border-t border-gray-200 mt-auto bg-gradient-to-r from-gray-50 to-gray-100">
-                  <Link 
-                    href="/favorites"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center py-3.5 px-4 text-gray-600 hover:text-[#0F2C59] hover:bg-white transition-all duration-200 rounded-xl group shadow-sm"
-                  >
-                    <div className="p-2 bg-white rounded-lg shadow-sm group-hover:shadow-md transition-shadow ml-3">
-                      <HiOutlineHeart size={18} className="text-[#0F2C59]" />
-                    </div>
-                    <span className="font-medium">علاقه‌مندی‌ها</span>
-                  </Link>
-                </div>
               </motion.div>
             </>
           )}
@@ -474,7 +492,7 @@ const Header = () => {
             <div className="relative">
               <HiOutlineShoppingBag size={22} />
               <span className="absolute -top-2 -right-2 bg-[#0F2C59] text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                2
+                {cartCount}
               </span>
             </div>
             <span className="mt-1">سبد خرید</span>
@@ -501,9 +519,6 @@ const Header = () => {
           )}
         </div>
       </div>
-
-      {/* Add bottom padding for mobile to prevent content from being hidden behind the navbar */}
-      <div className="md:hidden h-16"></div>
     </>
   );
 };

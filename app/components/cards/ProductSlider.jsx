@@ -2,15 +2,33 @@
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const categories = [
-  { id: 1, name: "زنانه" },
-  { id: 2, name: "مردانه" },
-  { id: 3, name: "اکسسوری" },
-];
-
 export default function ProductSlider({ products }) {
   const sliderRef = useRef();
   const [current, setCurrent] = useState(0);
+  const [categories, setCategories] = useState([]);
+
+  // دریافت دسته‌بندی‌ها از API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        if (data.categories) {
+          setCategories(data.categories);
+        }
+      } catch (error) {
+        console.error('خطا در دریافت دسته‌بندی‌ها:', error);
+        // fallback به دسته‌بندی‌های ثابت
+        setCategories([
+          { id: 1, name: "زنانه" },
+          { id: 2, name: "مردانه" },
+          { id: 3, name: "اکسسوری" },
+        ]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // اسکرول خودکار هر ۵ ثانیه
   useEffect(() => {
@@ -41,6 +59,20 @@ export default function ProductSlider({ products }) {
         return prev === 0 ? products.length - 1 : prev - 1;
       }
     });
+  };
+
+  // پیدا کردن نام دسته‌بندی
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category?.name || 'نامشخص';
+  };
+
+  // گرفتن تصویر اول محصول
+  const getProductImage = (product) => {
+    if (product.product_images && product.product_images.length > 0) {
+      return product.product_images[0].url;
+    }
+    return '/placeholder.jpg';
   };
 
   if (!products?.length) return null;
@@ -80,7 +112,7 @@ export default function ProductSlider({ products }) {
               >
                 <div className="mb-4 aspect-square">
                   <img
-                    src={product.images?.[0] || '/placeholder.jpg'}
+                    src={getProductImage(product)}
                     alt={product.name}
                     className="w-full h-full object-cover rounded-lg"
                   />
@@ -89,18 +121,13 @@ export default function ProductSlider({ products }) {
                 <div className="space-y-2 text-right">
                   <h3 className="font-medium text-gray-900">{product.name}</h3>
                   <div className="flex flex-wrap gap-1">
-                    {product.categoryIds?.map(id => (
-                      <span
-                        key={id}
-                        className="px-2 py-1 text-xs text-gray-600 bg-gray-50 rounded"
-                      >
-                        {categories.find(c => c.id === id)?.name || 'نامشخص'}
-                      </span>
-                    ))}
+                    <span className="px-2 py-1 text-xs text-gray-600 bg-gray-50 rounded">
+                      {getCategoryName(product.categoryid)}
+                    </span>
                   </div>
                   <div className="text-sm text-gray-600">
-                    <p className="truncate">جنس: {product.material}</p>
-                    <p className="truncate">رنگ: {product.color}</p>
+                    <p className="truncate">جنس: {product.material || 'نامشخص'}</p>
+                    <p className="truncate">رنگ: {product.color || 'نامشخص'}</p>
                   </div>
                   <div className="mt-2">
                     <span className="font-medium text-gray-900">

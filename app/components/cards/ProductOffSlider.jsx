@@ -2,15 +2,48 @@
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const categories = [
-  { id: 1, name: "زنانه" },
-  { id: 2, name: "مردانه" },
-  { id: 3, name: "اکسسوری" },
-];
+// تابع امن برای فرمت کردن قیمت
+const formatPrice = (price) => {
+  if (!price || isNaN(price)) return '۰';
+  
+  try {
+    return Number(price).toLocaleString('fa-IR');
+  } catch (error) {
+    try {
+      return Number(price).toLocaleString();
+    } catch (secondError) {
+      return Number(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+  }
+};
 
 export default function ProductOffSlider({ products }) {
   const sliderRef = useRef();
   const [current, setCurrent] = useState(0);
+  const [categories, setCategories] = useState([]);
+
+  // دریافت دسته‌بندی‌ها از API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        const data = await response.json();
+        if (data.categories) {
+          setCategories(data.categories);
+        }
+      } catch (error) {
+        console.error('خطا در دریافت دسته‌بندی‌ها:', error);
+        // fallback به دسته‌بندی‌های ثابت
+        setCategories([
+          { id: 1, name: "زنانه" },
+          { id: 2, name: "مردانه" },
+          { id: 3, name: "اکسسوری" },
+        ]);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // اسکرول خودکار هر ۵ ثانیه
   useEffect(() => {
@@ -43,6 +76,28 @@ export default function ProductOffSlider({ products }) {
     });
   };
 
+  // پیدا کردن نام دسته‌بندی
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category?.name || 'نامشخص';
+  };
+
+  // گرفتن تصویر اول محصول
+  const getProductImage = (product) => {
+    if (product.product_images && product.product_images.length > 0) {
+      return product.product_images[0].url;
+    }
+    return '/placeholder.jpg';
+  };
+
+  // محاسبه قیمت با تخفیف
+  const getDiscountedPrice = (price, discount) => {
+    if (discount && discount > 0) {
+      return price - (price * discount / 100);
+    }
+    return price;
+  };
+
   if (!products?.length) return null;
 
   return (
@@ -61,27 +116,16 @@ export default function ProductOffSlider({ products }) {
         ref={sliderRef}
         className="flex overflow-x-auto gap-4 pb-2 scroll-smooth"
         style={{
-          direction: 'ltr',
+          direction: 'rtl', // تغییر به rtl برای راست‌چین کردن
           scrollbarWidth: 'none'
         }}
       >
         {products.map((product, idx) => {
-          // انتخاب عکس معتبر (اولویت با مدل جدید)
-          const imageSrc =
-            (Array.isArray(product.product_images) && product.product_images[0]?.url) ||
-            (Array.isArray(product.images) && product.images[0]) ||
-            product.image_url ||
-            '/placeholder.jpg';
+          // انتخاب عکس معتبر
+          const imageSrc = getProductImage(product);
 
-          // درصد تخفیف (در صورت وجود)
-          const discount =
-            product.discount ||
-            product.discountPercent ||
-            Math.round(
-              product.oldPrice && product.price
-                ? 100 - (product.price / product.oldPrice) * 100
-                : 0
-            );
+          // درصد تخفیف
+          const discount = product.discount || 0;
 
           return (
             <div
@@ -91,7 +135,7 @@ export default function ProductOffSlider({ products }) {
             >
               <div className="bg-white border border-red-400 rounded-lg p-4 w-60 relative">
                 {/* نشان تخفیف */}
-                <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded z-10">
+                <span className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded z-10">
                   {discount ? `${discount}% تخفیف` : 'تخفیف'}
                 </span>
                 <Link
@@ -112,28 +156,27 @@ export default function ProductOffSlider({ products }) {
                   <div className="space-y-2 text-right">
                     <h3 className="font-medium text-gray-900">{product.name}</h3>
                     <div className="flex flex-wrap gap-1">
-                      {product.categoryIds?.map(id => (
-                        <span
-                          key={id}
-                          className="px-2 py-1 text-xs text-gray-600 bg-gray-50 rounded"
-                        >
-                          {categories.find(c => c.id === id)?.name || 'نامشخص'}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      <p className="truncate">جنس: {product.material}</p>
-                      <p className="truncate">رنگ: {product.color}</p>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="font-medium text-gray-900">
-                        {product.price?.toLocaleString() || '۰'} تومان
+                      <span className="px-2 py-1 text-xs text-gray-600 bg-gray-50 rounded">
+                        {getCategoryName(product.categoryid)}
                       </span>
-                      {product.oldPrice && (
-                        <span className="text-xs text-gray-400 line-through">
-                          {product.oldPrice?.toLocaleString()} تومان
+                    </div>
+                    <div className="text-sm text-gray-600 text-right">
+                      <p className="truncate">جنس: {product.material || 'نامشخص'}</p>
+                      <p className="truncate">رنگ: {product.color || 'نامشخص'}</p>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-right">
+                      {/* قیمت نهایی (سمت راست) */}
+                      <span className="font-medium text-gray-900">
+                        {formatPrice(getDiscountedPrice(product.price, discount))} تومان
+                      </span>                     
+                      {/* قیمت قبلی (سمت چپ) */}
+                      {discount > 0 && (
+                        <span className="text-xs text-gray-400 line-through float-left">
+                          {formatPrice(product.price)} تومان
                         </span>
                       )}
+                      {/* clearfix */}
+                      <div className="clear-both"></div>
                     </div>
                   </div>
                 </Link>

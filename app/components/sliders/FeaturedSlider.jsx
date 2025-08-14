@@ -34,7 +34,7 @@ const FeaturedSlider = ({ sliderImages = [] }) => {
   }
 
   return (
-    <div className="relative bg-white border-t border-black/20 w-full sm:h-[400px] h-[250px] overflow-hidden shadow-xl">
+    <div className="relative bg-white border-t border-black/20 w-full sm:h-[500px] h-[250px] overflow-hidden shadow-xl">
       {/* Slides Container */}
       <div className="relative h-full w-full">
         {sliderImages.map((item, index) => (

@@ -41,7 +41,7 @@ export default function CategoriesCircle({ categories: propCategories }) {
   };
 
   return (
-    <div className="flex flex-wrap justify-center md:mt-8 gap-8 sm:gap-20 px-4">
+    <div className="flex flex-wrap justify-center mt-2 md:mt-8 gap-8 sm:gap-20 px-4">
       {categories.length > 0 ? (
         categories.map((category, idx) => (
           <div
@@ -56,7 +56,7 @@ export default function CategoriesCircle({ categories: propCategories }) {
                 rotate: [0, 2, -2, 2, -2, 0],
                 transition: { duration: 0.5 },
               }}
-              className="w-24 h-24 sm:w-36 sm:h-36 rounded-full border-1 shadow-lg flex items-center justify-center overflow-hidden"
+              className="w-16 h-16 sm:w-35 sm:h-35 rounded-full border-1 shadow-lg flex items-center justify-center overflow-hidden"
               style={{
                 backgroundColor: circleColors[idx % circleColors.length],
                 borderColor: 'rgba(255,255,255,0.7)',
@@ -71,7 +71,7 @@ export default function CategoriesCircle({ categories: propCategories }) {
               />
             </motion.div>
             {/* نام دسته‌بندی */}
-            <p className="mt-2 sm:mt-4 text-center text-gray-800 font-semibold text-sm sm:text-lg group-hover:scale-110 group-hover:text-red-900 transition-transform duration-300">
+            <p className="mt-2 sm:mt-2 text-center text-gray-800 font-semibold text-sm sm:text-lg group-hover:scale-110 group-hover:text-red-900 transition-transform duration-300">
               {category.name}
             </p>
           </div>

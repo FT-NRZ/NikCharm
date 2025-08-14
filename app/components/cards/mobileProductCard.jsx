@@ -25,7 +25,7 @@ const MobileProductCard = React.memo(({ product }) => {
       target="_blank"
       rel="noopener noreferrer"
     >
-      <div className="w-80 p-4 bg-gray-100 rounded-lg border-gray-200 hover:bg-gray-100 transition-colors">
+      <div className="w-91 p-4 bg-gray-100 rounded-lg border-gray-200 hover:bg-gray-100 transition-colors">
         <div className="flex items-stretch gap-4 w-full">
           {/* Container تصویر محصول */}
           <div className="w-28 h-28 flex-shrink-0 rounded-lg overflow-hidden border border-gray-300 bg-white">

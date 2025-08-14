@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Header from "../components/Header";
+import CheckoutModal from "../components/CheckoutModal"; // اضافه کردن import
 import {
   HiArrowRight,
   HiOutlineShoppingBag
@@ -17,9 +19,12 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
 };
 
+// خط 25 تا 60 را با این جایگزین کن:
+
 export default function ShoppingCart() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const router = useRouter();
 
   // گرفتن اطلاعات محصولات سبد خرید از دیتابیس
@@ -31,13 +36,12 @@ export default function ShoppingCart() {
         setLoading(false);
         return;
       }
-      const cart = JSON.parse(stored); // [{id, quantity}, ...]
+      const cart = JSON.parse(stored);
       if (cart.length === 0) {
         setCartItems([]);
         setLoading(false);
         return;
       }
-      // گرفتن اطلاعات هر محصول از API
       const products = await Promise.all(
         cart.map(async (ci) => {
           const res = await fetch(`/api/products?id=${ci.id}`);
@@ -55,7 +59,6 @@ export default function ShoppingCart() {
   }, []);
 
   useEffect(() => {
-    // فقط id و quantity را ذخیره کن
     const simpleCart = cartItems.map(item => ({
       id: item.id,
       quantity: item.quantity
@@ -63,10 +66,14 @@ export default function ShoppingCart() {
     localStorage.setItem('cart', JSON.stringify(simpleCart));
   }, [cartItems]);
 
+  // محاسبه مبالغ (قبل از استفاده در JSX)
   const subtotal = cartItems.reduce((total, item) => {
     const price = Number(item.discountPrice || item.discount_price || item.price || 0);
     return total + price * item.quantity;
   }, 0);
+
+  const shippingCost = subtotal > 5000000 ? 0 : 150000;
+  const totalAmount = subtotal + shippingCost; // تعریف totalAmount اینجا
 
   const removeItem = (id) => {
     setCartItems(cartItems.filter((item) => item.id !== id));
@@ -113,16 +120,40 @@ export default function ShoppingCart() {
   }
 
   return (
-    <div className="bg-white min-h-screen px-4 py-12">
+    <>
+    <Header/>
+      <CheckoutModal
+        isOpen={showCheckoutModal}
+        onClose={() => setShowCheckoutModal(false)}
+        cartItems={cartItems}
+        totalAmount={totalAmount}
+      />
+      <div className="bg-white min-h-screen px-4 py-12">
       <div className="max-w-6xl mx-auto">
+        {/* هدر سبد خرید با دکمه بازگشت */}
         <div className="flex items-center justify-between mb-8 border-b border-[#0F2C59]/10 pb-4">
           <h1 className="text-3xl font-bold text-[#0F2C59] text-right">سبد خرید شما</h1>
-          <div className="flex items-center gap-2 text-[#0F2C59]">
-            <HiShoppingCart className="w-6 h-6" />
-            <span className="text-sm">{cartItems.length} محصول</span>
+
+          <div className="flex items-center gap-4 text-[#0F2C59]">
+            {/* دکمه بازگشت سمت چپ (یا راست در حالت RTL) */}
+            <button
+              onClick={() => router.back()}
+              className="hover:text-[#0F2C59]/80 transition text-sm flex items-center gap-1"
+            >
+              <HiArrowRight className="w-5 h-5" />
+              بازگشت
+            </button>
+
+            {/* تعداد محصولات */}
+            <div className="flex items-center gap-1">
+              <HiShoppingCart className="w-6 h-6" />
+              <span className="text-sm">{cartItems.length} محصول</span>
+            </div>
           </div>
         </div>
 
+
+        {/* محتوای سبد خرید */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             {cartItems.map((item) => (
@@ -135,9 +166,10 @@ export default function ShoppingCart() {
             ))}
           </div>
 
+          {/* خلاصه سفارش */}
           <div className="bg-gradient-to-b from-white to-[#0F2C59]/5 p-6 rounded-xl border border-[#0F2C59]/10 shadow-md">
             <h2 className="text-[#0F2C59] font-bold text-xl mb-6 border-b border-[#0F2C59]/10 pb-3 text-right">خلاصه سفارش</h2>
-            
+
             <div className="space-y-4 text-right mb-6">
               <div className="flex justify-between">
                 <span className="text-[#0F2C59] font-medium">{formatPrice(subtotal)}</span>
@@ -168,16 +200,24 @@ export default function ShoppingCart() {
               </div>
             </div>
 
-            <button className="w-full bg-[#0F2C59] text-white py-4 rounded-lg hover:bg-[#0F2C59]/90 transition flex justify-center items-center gap-2 shadow-lg shadow-[#0F2C59]/20">
+            <button 
+              className="w-full bg-[#0F2C59] text-white py-4 rounded-lg hover:bg-[#0F2C59]/90 transition flex justify-center items-center gap-2 shadow-lg shadow-[#0F2C59]/20"
+              onClick={() => setShowCheckoutModal(true)} // تغییر onClick
+            >
               <HiShoppingCart size={20} /> ادامه خرید
             </button>
 
-            <button className="block mt-4 w-full text-center text-[#0F2C59] py-2 border border-[#0F2C59]/20 rounded-lg hover:bg-[#0F2C59]/5 transition text-sm">
+
+            <button
+              className="block mt-4 w-full text-center text-[#0F2C59] py-2 border border-[#0F2C59]/20 rounded-lg hover:bg-[#0F2C59]/5 transition text-sm"
+              onClick={() => router.push('/products')}
+            >
               بازگشت به فروشگاه
             </button>
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }

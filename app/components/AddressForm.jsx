@@ -106,7 +106,7 @@ const AddressDropdown = ({ onAddressSelect }) => {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* انتخاب استان */}
       <div className="relative">
-        <label className="block text-sm font-semibold text-[#0F2C59] mb-2 flex items-center">
+        <label className="block text-sm font-semibold text-[#0F2C59] mb-2 items-center">
           <MapPinIcon className="w-4 h-4 ml-1" />
           استان
         </label>
@@ -135,7 +135,7 @@ const AddressDropdown = ({ onAddressSelect }) => {
 
       {/* انتخاب شهر */}
       <div className="relative">
-        <label className="block text-sm font-semibold text-[#0F2C59] mb-2 flex items-center">
+        <label className="block text-sm font-semibold text-[#0F2C59] mb-2 items-center">
           <HomeIcon className="w-4 h-4 ml-1" />
           شهر
         </label>
@@ -221,7 +221,7 @@ const AddressForm = ({ onSubmit, showSavedAddresses = true }) => {
       phone_number: addressData.phone_number.trim(),
       postalcode: addressData.postalcode || null,
       // ⭐ استفاده از province_id و city_id (API جدید)
-      province_id: selectedLocation.state?.id || selectedLocation.province?.id,
+      state_id: selectedLocation.state?.id || selectedLocation.province?.id,
       city_id: selectedLocation.city.id,
       // ⭐ اضافه کردن نام‌ها برای نمایش
       city: selectedLocation.city.name,
