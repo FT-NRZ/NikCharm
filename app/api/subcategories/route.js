@@ -1,5 +1,3 @@
-// app/api/subcategories/route.js - فقط PUT اضافه کن:
-
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 

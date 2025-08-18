@@ -101,25 +101,21 @@ export default function ProductOffSlider({ products }) {
   if (!products?.length) return null;
 
   return (
-    <div className="w-full flex items-center mb-4 relative">
+    <div className="w-full flex justify-between items-center mb-4 relative">
       {/* دکمه بعدی (راست) */}
       <button
         onClick={() => handleScroll('right')}
-        className="mx-2 bg-white/80 hover:bg-gray-100 rounded-full shadow p-2 text-xl z-10"
+        className="ml-2 bg-white/80 hover:bg-gray-100 rounded-full shadow p-2 text-xl z-10"
         aria-label="بعدی"
         type="button"
       >
         &#8594;
       </button>
 
-      <div
-        ref={sliderRef}
-        className="flex overflow-x-auto gap-4 pb-2 scroll-smooth"
-        style={{
-          direction: 'rtl', // تغییر به rtl برای راست‌چین کردن
-          scrollbarWidth: 'none'
-        }}
-      >
+        <div
+          ref={sliderRef}
+          className="flex-1 flex justify-center items-center w-full pb-2"
+        >
         {products.map((product, idx) => {
           // انتخاب عکس معتبر
           const imageSrc = getProductImage(product);
@@ -189,7 +185,7 @@ export default function ProductOffSlider({ products }) {
       {/* دکمه قبلی (چپ) */}
       <button
         onClick={() => handleScroll('left')}
-        className="mx-2 bg-white/80 hover:bg-gray-100 rounded-full shadow p-2 text-xl z-10"
+        className="mr-2 bg-white/80 hover:bg-gray-100 rounded-full shadow p-2 text-xl z-10"
         aria-label="قبلی"
         type="button"
       >

@@ -118,7 +118,6 @@ model receiver_info {
   users        users   @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-
 model Roles {
   id         BigInt       @id @default(autoincrement())
   name       String       @unique
@@ -132,35 +131,35 @@ model subcategories {
   name           String     @db.VarChar(100)
   categories     categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
+
 model User_roles {
   id     BigInt @id @default(autoincrement())
-  userid Int    // ⭐ تغییر از BigInt به Int
+  userid Int
   roleid BigInt
-  users  users  @relation(fields: [userid], references: [id]) // ⭐ تغییر از Users به users
   roles  Roles  @relation(fields: [roleid], references: [id])
+  users  users  @relation(fields: [userid], references: [id])
 }
 
 model users {
-  id            Int             @id @default(autoincrement())
-  username      String          @unique @db.VarChar(50)
-  email         String          @unique @db.VarChar(100)
-  full_name     String          @db.VarChar(100)
-  passwordhash  String          @db.VarChar(255)
-  phone_number  String?         @db.VarChar(20)
-  city          String?         @db.VarChar(50)
-  province      String?         @db.VarChar(50)
-  description   String?
-  isactive      Boolean?        @default(true)
-  created_at    DateTime?       @default(now()) @db.Timestamp(6)
-  comments      comments[]
-  login_records login_records[]
-  orders        orders[]
-  receiver_info receiver_info[]
-  user_roles    User_roles[]    // ⭐ اضافه کردن relation
-  addresses     address[]       @relation("UserAddresses")
-  password_resets  password_reset_tokens[] @relation("UserPasswordResets")
+  id              Int                     @id @default(autoincrement())
+  username        String                  @unique @db.VarChar(50)
+  email           String                  @unique @db.VarChar(100)
+  full_name       String                  @db.VarChar(100)
+  passwordhash    String                  @db.VarChar(255)
+  phone_number    String?                 @db.VarChar(20)
+  city            String?                 @db.VarChar(50)
+  province        String?                 @db.VarChar(50)
+  description     String?
+  isactive        Boolean?                @default(true)
+  created_at      DateTime?               @default(now()) @db.Timestamp(6)
+  user_roles      User_roles[]
+  addresses       address[]               @relation("UserAddresses")
+  comments        comments[]
+  login_records   login_records[]
+  orders          orders[]
+  password_resets password_reset_tokens[] @relation("UserPasswordResets")
+  receiver_info   receiver_info[]
 }
-
 
 model address {
   id           Int       @id @default(autoincrement())
@@ -170,54 +169,52 @@ model address {
   house_no     String?   @db.VarChar(20)
   phone_number String    @db.VarChar(20)
   postalcode   String?   @db.VarChar(20)
-  state_id     BigInt    // reference به provinces
-  city_id      BigInt    // reference به cities
+  state_id     BigInt
+  city_id      BigInt
   created_at   DateTime? @default(now()) @db.Timestamp(6)
   updated_at   DateTime? @updatedAt @db.Timestamp(6)
-  
-  user         users     @relation("UserAddresses", fields: [user_id], references: [id], onDelete: Cascade)
-  province     provinces @relation("AddressProvince", fields: [state_id], references: [id])
   city_info    cities    @relation("AddressCity", fields: [city_id], references: [id])
+  province     provinces @relation("AddressProvince", fields: [state_id], references: [id])
+  user         users     @relation("UserAddresses", fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model provinces {
-  id         BigInt     @id @default(autoincrement())
-  name       String     @db.VarChar(255)
-  status     String     @db.VarChar(255)
-  created_at DateTime?  @db.Timestamp(6)
-  updated_at DateTime?  @db.Timestamp(6)
-  cities     cities[]   @relation("ProvinceCities")
-  addresses  address[]  @relation("AddressProvince")
+  id         BigInt    @id @default(autoincrement())
+  name       String    @db.VarChar(255)
+  status     String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(6)
+  updated_at DateTime? @db.Timestamp(6)
+  addresses  address[] @relation("AddressProvince")
+  cities     cities[]  @relation("ProvinceCities")
 
-  @@map("states") // مپ به جدول states در دیتابیس
+  @@map("states")
 }
 
 model cities {
   id          BigInt     @id @default(autoincrement())
   name        String     @db.VarChar(255)
-  province_id BigInt
+  province_id BigInt?
   status      Int
   created_at  DateTime?  @db.Timestamp(6)
   updated_at  DateTime?  @db.Timestamp(6)
   slug        String?    @db.VarChar(255)
-  province    provinces  @relation("ProvinceCities", fields: [province_id], references: [id])
+  state_id    BigInt?
   addresses   address[]  @relation("AddressCity")
+  province    provinces? @relation("ProvinceCities", fields: [province_id], references: [id], onDelete: Restrict)
 
   @@map("cities")
 }
 
 model password_reset_tokens {
-  id           Int      @id @default(autoincrement())
-  user_id      Int
-  email        String   @db.VarChar(100)
-  token        String   @db.VarChar(10)
-  expires_at   DateTime @db.Timestamp(6)
-  created_at   DateTime @default(now()) @db.Timestamp(6)
-  used         Boolean  @default(false)
-  
-  // Relation
-  user         users    @relation("UserPasswordResets", fields: [user_id], references: [id], onDelete: Cascade)
-  
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  email      String   @db.VarChar(100)
+  token      String   @db.VarChar(10)
+  expires_at DateTime @db.Timestamp(6)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  used       Boolean  @default(false)
+  user       users    @relation("UserPasswordResets", fields: [user_id], references: [id], onDelete: Cascade)
+
   @@unique([email, token])
   @@map("password_reset_tokens")
 }

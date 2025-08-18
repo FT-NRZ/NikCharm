@@ -1,8 +1,10 @@
 // app/api/addresses/route.js - نسخه کاملاً درست:
 
 import { NextResponse } from 'next/server';
-import prisma from '../../../lib/prisma';
 import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nikcharm-secret-key-2024';
 

@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, User, Mail, Phone, MapPin, Calendar, Shield, Eye, Edit, Trash2, Filter, RefreshCw } from 'lucide-react';
 
 const UserManagementAdmin = () => {
@@ -13,7 +14,6 @@ const UserManagementAdmin = () => {
   const [showModal, setShowModal] = useState(false);
   const [products, setProducts] = useState({});
   const [deletingComment, setDeletingComment] = useState(null);
-
 
 
   const [stats, setStats] = useState({
@@ -323,10 +323,10 @@ const UserManagementAdmin = () => {
 
 const UserModal = ({ user, onClose }) => {
   const [activeTab, setActiveTab] = useState('profile');
-  
+  const router = useRouter();
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden shadow-xl relative">
+      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-w-3xl max-h-[90vh] sm:max-h-[90vh] overflow-hidden shadow-xl relative">
         {/* نوار عنوان - کوچکتر در موبایل */}
         <div className="flex justify-between items-center p-3 sm:p-5 bg-gray-50 border-b border-gray-200">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800">جزئیات کاربر</h2>
@@ -469,19 +469,27 @@ const UserModal = ({ user, onClose }) => {
           
           {/* تب سفارشات - ساده‌تر در موبایل */}
           {activeTab === 'orders' && (
-            <div>
-              {user._count?.orders > 0 ? (
-                <div className="bg-blue-50 p-3 sm:p-4 rounded-lg text-center">
-                  <p className="text-blue-700 text-sm">{user._count.orders} سفارش</p>
-                  <p className="text-xs text-blue-600 mt-1 sm:mt-2">برای مشاهده جزئیات، به بخش مدیریت سفارش‌ها مراجعه کنید.</p>
-                </div>
-              ) : (
-                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg text-center">
-                  <p className="text-gray-500 text-sm">این کاربر هنوز سفارشی ثبت نکرده است.</p>
-                </div>
-              )}
-            </div>
-          )}
+          <div>
+            {user._count?.orders > 0 ? (
+              <div className="bg-blue-50 p-3 sm:p-4 rounded-lg text-center">
+                <p className="text-blue-700 text-sm">{user._count.orders} سفارش</p>
+                <button
+                  onClick={() => {
+                    onClose(); // بستن مودال
+                    router.push('/admin/Orders'); // انتقال داخلی
+                  }}
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-bold"
+                >
+                  مدیریت سفارشات
+                </button>
+              </div>
+            ) : (
+              <div className="bg-gray-50 p-3 sm:p-4 rounded-lg text-center">
+                <p className="text-gray-500 text-sm">این کاربر هنوز سفارشی ثبت نکرده است.</p>
+              </div>
+            )}
+          </div>
+        )}
           
           {/* تب کامنت‌ها - کوچکتر در موبایل */}
           {activeTab === 'comments' && (
@@ -569,7 +577,7 @@ const UserModal = ({ user, onClose }) => {
         </div>
         
         {/* دکمه‌های عملیات - کوچکتر و فشرده‌تر در موبایل */}
-        <div className="p-3 sm:p-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-2 sm:space-x-3 space-x-reverse">
+        <div className="p-3 sm:p-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-2 sm:space-x-3">
           <button
             onClick={onClose}
             className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-xs sm:text-sm"

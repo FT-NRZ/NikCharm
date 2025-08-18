@@ -3,6 +3,8 @@ import ProductCard from '../../../app/components/cards/ProductCard';
 import { useState, useRef, useEffect } from 'react';
 import { HiOutlineSearch, HiOutlineFilter, HiOutlineTag, HiX } from "react-icons/hi";
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../app/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const [products, setProducts] = useState([]);
@@ -12,6 +14,17 @@ export default function DashboardPage() {
   const [isClient, setIsClient] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+    useEffect(() => {
+    if (!loading) {
+      // اگر کاربر لاگین نیست یا نقش ادمین ندارد
+      if (!user || !(user.role === 'admin' || (user.user_roles && user.user_roles.some(r => r.roles?.name === 'admin')))) {
+        router.replace('/'); // یا '/login'
+      }
+    }
+  }, [user, loading, router]);
 
   // تشخیص موبایل
   useEffect(() => {

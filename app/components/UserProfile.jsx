@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   ChevronDownIcon,
   UserIcon,
-  Cog6ToothIcon,
+  Squares2X2Icon,
   ArrowLeftOnRectangleIcon,
   ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
@@ -15,6 +15,72 @@ const UserProfile = () => {
   const [user, setUser] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const role = user?.role || localStorage.getItem('userRole');
+  const isAdmin = role === 'admin';
+
+
+  const handleLogout = () => {
+    // پاک کردن localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userRole');
+    
+    // اعلان logout
+    window.dispatchEvent(new Event('storage'));
+    
+    // اجرای logout از AuthContext
+    if (logout) {
+      logout();
+    }
+    
+    // تنظیم state
+    setUser(null);
+    setIsOpen(false);
+    
+    // redirect
+    window.location.href = '/';
+  };
+
+const menuItems = [
+  {
+    icon: UserIcon,
+    label: 'پروفایل من',
+    href: '/profile',
+    action: () => setIsOpen(false),
+    color: 'text-[#0F2C59]',
+    bgColor: 'bg-[#0F2C59]/10',
+    description: 'مدیریت اطلاعات شخصی'
+  },
+  {
+    icon: ShoppingBagIcon,
+    label: 'سفارشات من',
+    href: '/orders',
+    action: () => setIsOpen(false),
+    color: 'text-[#0F2C59]',
+    bgColor: 'bg-[#0F2C59]/10',
+    description: 'تاریخچه خرید و سفارشات'
+  },
+  // فقط برای ادمین: داشبورد مدیریت
+  ...(isAdmin ? [{
+    icon: Squares2X2Icon,
+    label: 'داشبورد مدیریت',
+    href: '/admin/dashboard',
+    action: () => setIsOpen(false),
+    color: 'text-[#0F2C59]',
+    bgColor: 'bg-[#0F2C59]/10',
+    description: 'مدیریت سایت و محصولات'
+  }] : []),
+  {
+    icon: ArrowLeftOnRectangleIcon,
+    label: 'خروج از حساب',
+    action: handleLogout,
+    className: 'text-red-600 hover:text-red-700 hover:bg-red-50/80',
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    description: 'خروج از حساب کاربری'
+  }
+];
 
   // ⭐ بارگذاری user
   useEffect(() => {
@@ -85,74 +151,13 @@ const UserProfile = () => {
     return null;
   }
 
-  const handleLogout = () => {
-    // پاک کردن localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userRole');
-    
-    // اعلان logout
-    window.dispatchEvent(new Event('storage'));
-    
-    // اجرای logout از AuthContext
-    if (logout) {
-      logout();
-    }
-    
-    // تنظیم state
-    setUser(null);
-    setIsOpen(false);
-    
-    // redirect
-    window.location.href = '/';
-  };
-
-  const menuItems = [
-    {
-      icon: UserIcon,
-      label: 'پروفایل من',
-      href: '/profile',
-      action: () => setIsOpen(false),
-      color: 'text-[#0F2C59]',
-      bgColor: 'bg-[#0F2C59]/10',
-      description: 'مدیریت اطلاعات شخصی'
-    },
-    {
-      icon: ShoppingBagIcon,
-      label: 'سفارشات من',
-      href: '/orders',
-      action: () => setIsOpen(false),
-      color: 'text-[#0F2C59]',
-      bgColor: 'bg-[#0F2C59]/10',
-      description: 'تاریخچه خرید و سفارشات'
-    },
-    {
-      icon: Cog6ToothIcon,
-      label: 'تنظیمات',
-      href: '/settings',
-      action: () => setIsOpen(false),
-      color: 'text-[#0F2C59]',
-      bgColor: 'bg-[#0F2C59]/10',
-      description: 'تنظیمات حساب کاربری'
-    },
-    {
-      icon: ArrowLeftOnRectangleIcon,
-      label: 'خروج از حساب',
-      action: handleLogout,
-      className: 'text-red-600 hover:text-red-700 hover:bg-red-50/80',
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-      description: 'خروج از حساب کاربری'
-    }
-  ];
 
   return (
     <div className="relative" ref={dropdownRef} style={{ fontFamily: 'Vazirmatn, system-ui, sans-serif', direction: 'rtl' }}>
       {/* Profile Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group relative flex items-center space-x-3 space-x-reverse bg-white hover:bg-gray-50 rounded-xl px-3 py-2 transition-all duration-300 ease-in-out border border-gray-200 hover:border-[#0F2C59]/30 hover:shadow-lg"
+        className="group relative flex items-center space-x-3 bg-white hover:bg-gray-50 rounded-xl px-3 py-2 transition-all duration-300 ease-in-out border border-gray-200 hover:border-[#0F2C59]/30 hover:shadow-lg"
       >
         {/* آواتار */}
         <div className="relative">
@@ -187,7 +192,7 @@ const UserProfile = () => {
         <div className="absolute left-0 mt-3 w-80 bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-top-3 duration-300">
           {/* Header */}
           <div className="relative px-6 py-5 bg-gradient-to-r from-[#0F2C59]/5 to-[#0F2C59]/10 border-b border-gray-100/50">
-            <div className="flex items-start space-x-4 space-x-reverse">
+            <div className="flex items-start space-x-4 ">
               <div className="relative flex-shrink-0">
                 <div className="w-14 h-14 bg-gradient-to-br from-[#0F2C59] to-[#0F2C59]/80 rounded-2xl flex items-center justify-center shadow-lg">
                   <UserIcon className="w-7 h-7 text-white" />

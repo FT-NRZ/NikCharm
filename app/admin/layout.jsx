@@ -1,5 +1,3 @@
-// کل فایل layout.jsx را با این جایگزین کن:
-
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -118,6 +116,17 @@ export default function AdminLayout({ children }) {
               >
                 مدیریت کاربران
               </SidebarLink>
+              <SidebarLink
+                href="/admin/Orders"
+                icon={<HiOutlineViewGrid size={20} />}
+                active={pathname === "/admin/Orders"}
+                onClick={() => {
+                  setMobileMenu(false);
+                  setOpenProducts(false);
+                }}
+              >
+                مدیریت سفارشات
+              </SidebarLink>
             </nav>
           </div>
         )}
@@ -155,7 +164,7 @@ export default function AdminLayout({ children }) {
           <h2 className="text-2xl font-extrabold text-blue-700 mb-6 text-center tracking-tight drop-shadow">داشبورد مدیریت</h2>
           
           <nav className="flex flex-col gap-4 flex-1">
-            <div className="space-y-4">
+            <div>
               <button
                 className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-right transition-all duration-300 hover:bg-blue-100 hover:text-blue-700 text-gray-700 cursor-pointer w-full relative"
                 onClick={() => setOpenProducts((prev) => !prev)}
@@ -170,7 +179,7 @@ export default function AdminLayout({ children }) {
                   openProducts ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
-                <div className="flex flex-col gap-2 pr-6">
+                <div className="flex flex-col gap-2 pr-6 mt-3">
                   <SidebarLink
                     href="/admin/dashboard"
                     icon={<HiOutlineViewGrid size={20} />}
@@ -218,7 +227,7 @@ export default function AdminLayout({ children }) {
             </div>
             
             {/* مدیریت کاربران در منوی دسکتاپ */}
-            <div className="mt-4">
+            <div className="mt-1">
               <SidebarLink
                 href="/admin/Users"
                 icon={<HiOutlineViewGrid size={20} />}
@@ -226,6 +235,11 @@ export default function AdminLayout({ children }) {
                 onClick={() => setOpenProducts(false)}
               >
                 مدیریت کاربران
+              </SidebarLink>
+            </div>
+            <div className="mt-1">
+              <SidebarLink href="/admin/Orders" icon={<HiOutlineViewGrid />} active={false}>
+                مدیریت سفارشات
               </SidebarLink>
             </div>
           </nav>
@@ -236,15 +250,13 @@ export default function AdminLayout({ children }) {
   );
 }
 
-// کامپوننت لینک سایدبار
 function SidebarLink({ href, icon, children, active, onClick }) {
+  const base = "flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-right transition-all duration-300 cursor-pointer relative overflow-hidden shadow-sm mb-1";
+  const activeCls = "bg-blue-600 text-white";
+  const inactiveCls = "hover:bg-blue-100 hover:text-blue-700 text-gray-700";
   return (
     <Link href={href} className="group" onClick={onClick}>
-      <div className={`
-        flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-right
-        transition-all duration-300 cursor-pointer relative overflow-hidden shadow-sm mb-1
-        ${active ? "bg-blue-600 text-white" : "hover:bg-blue-100 hover:text-blue-700 text-gray-700"}
-      `}>
+      <div className={`${base} ${active ? activeCls : inactiveCls}`}>
         <span className="transition-transform duration-300 group-hover:scale-110">{icon}</span>
         <span className="transition-all duration-300 group-hover:pr-2">{children}</span>
         {active && (

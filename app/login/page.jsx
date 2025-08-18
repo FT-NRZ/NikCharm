@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ForgotPasswordModal from '../components/ForgotPasswordModal';
+import { toast } from 'react-toastify'; 
+
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -53,6 +55,24 @@ export default function LoginPage() {
       }, 300);
     }
   }, [showRoleSelector]);
+
+    useEffect(() => {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const message = params.get('message');
+        if (message) {
+          toast.info(decodeURIComponent(message), {
+            position: "top-right",
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            theme: "colored",
+          });
+        }
+      }
+    }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -178,7 +198,15 @@ export default function LoginPage() {
 
       // اعلام موفقیت
       setIsLoading(false);
-      alert(isLogin ? 'ورود موفقیت‌آمیز!' : 'ثبت‌نام موفقیت‌آمیز!');
+      toast.success(isLogin ? 'ورود موفقیت‌آمیز!' : 'ثبت‌نام موفقیت‌آمیز!', {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
 
       setTimeout(() => {
         const redirectPath = result.user.role === 'admin' ? '/admin/dashboard' : '/';
@@ -215,7 +243,7 @@ export default function LoginPage() {
         <div className="fixed top-6 right-6 z-20">
           <a 
             href="/" 
-            className="flex items-center text-navy-700 hover:text-blue-600 transition-colors rounded-full bg-white/90 backdrop-blur-md py-2.5 px-5 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+            className="flex items-center text-navy-700 hover:text-blue-600 transition-colors rounded-full bg-white/90 backdrop-blur-md py-2.5 px-5 shadow-lg hover:shadow-xl transform hover:scale-105  duration-300"
           >
             <span className="font-medium">بازگشت به صفحه اصلی</span>
             <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

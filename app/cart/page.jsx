@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Header from "../components/Header";
-import CheckoutModal from "../components/CheckoutModal"; // اضافه کردن import
+import CheckoutModal from "../components/CheckoutModal";
 import {
   HiArrowRight,
   HiOutlineShoppingBag
@@ -14,6 +14,9 @@ import {
 } from 'react-icons/hi2';
 import { useRouter } from 'next/navigation';
 import CartCard from '../components/cards/cartCard';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('fa-IR').format(price) + ' تومان';
@@ -79,22 +82,58 @@ export default function ShoppingCart() {
     setCartItems(cartItems.filter((item) => item.id !== id));
   };
 
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity <= 0) return;
-    setCartItems(
-      cartItems.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
+const updateQuantity = async (id, newQuantity) => {
+  if (newQuantity <= 0) return;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white text-center">
-        <span className="text-[#0F2C59] text-xl">در حال بارگذاری...</span>
-      </div>
-    );
+  // بررسی موجودی از دیتابیس
+  const res = await fetch(`/api/products?id=${id}`);
+  const data = await res.json();
+
+  if (!data.product) {
+    toast.error('محصول یافت نشد!', {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+    return;
   }
+
+  const stockQuantity = data.product.stock_quantity;
+
+  if (newQuantity > stockQuantity) {
+    toast.warn(`موجودی کافی نیست! فقط ${stockQuantity} عدد موجود است.`, {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+    return;
+  }
+
+  // به‌روزرسانی تعداد در سبد خرید
+  setCartItems(
+    cartItems.map((item) =>
+      item.id === id ? { ...item, quantity: newQuantity } : item
+    )
+  );
+
+  toast.success('تعداد محصول با موفقیت به‌روزرسانی شد!', {
+    position: "top-right",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+  });
+};
 
   if (cartItems.length === 0) {
     return (
@@ -122,12 +161,13 @@ export default function ShoppingCart() {
   return (
     <>
     <Header/>
-      <CheckoutModal
-        isOpen={showCheckoutModal}
-        onClose={() => setShowCheckoutModal(false)}
-        cartItems={cartItems}
-        totalAmount={totalAmount}
-      />
+    <ToastContainer />
+    <CheckoutModal
+      isOpen={showCheckoutModal}
+      onClose={() => setShowCheckoutModal(false)}
+      cartItems={cartItems}
+      totalAmount={totalAmount}
+    />
       <div className="bg-white min-h-screen px-4 py-12">
       <div className="max-w-6xl mx-auto">
         {/* هدر سبد خرید با دکمه بازگشت */}

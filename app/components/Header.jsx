@@ -11,6 +11,7 @@ import UserProfile from './UserProfile';
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); // اضافه کردن state برای query
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductMenuOpen, setIsProductMenuOpen] = useState(false);
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState(null);
@@ -19,6 +20,7 @@ const Header = () => {
   const [categories, setCategories] = useState([]);
   const router = useRouter();
   const searchRef = useRef(null);
+  const mobileSearchRef = useRef(null); // اضافه کردن ref برای mobile search
   const mobileMenuRef = useRef(null);
 
   // استفاده از AuthContext برای مدیریت کاربر
@@ -212,28 +214,6 @@ const Header = () => {
 
             {/* Actions - سمت چپ */}
             <div className="flex items-center gap-4 flex-shrink-0">
-              {/* Search */}
-              <div className="flex items-center gap-2" ref={searchRef}>
-                <motion.div
-                  animate={{ width: isSearchOpen ? 200 : 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  className="overflow-hidden"
-                >
-                  <input
-                    type="text"
-                    placeholder="جستجو..."
-                    className="w-full pr-3 py-1.5 pl-3 rounded-lg border border-gray-300 focus:border-[#0F2C59] focus:ring-1 focus:ring-[#0F2C59]/30 text-sm placeholder-gray-400"
-                    dir="rtl"
-                  />
-                </motion.div>
-                <button
-                  onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  className="text-gray-900 hover:text-gray-700 transition-colors duration-200 p-1.5 rounded-lg hover:bg-gray-100"
-                >
-                  <HiOutlineMagnifyingGlass size={20} />
-                </button>
-              </div>
-
               {/* Cart */}
               <Link 
                 href="/cart" 
@@ -287,14 +267,7 @@ const Header = () => {
             </div>
 
             {/* Mobile Right Actions */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="text-gray-900 hover:text-gray-700 transition-colors p-1.5 rounded-lg"
-              >
-                <HiOutlineMagnifyingGlass size={20} />
-              </button>
-              
+            <div className="flex items-center gap-3">              
               <Link href="/cart" className="relative text-gray-900 hover:text-gray-700 transition-colors p-1.5 rounded-lg">
                 <HiOutlineShoppingBag size={20} />
                 <span className="absolute -top-1 -right-1 bg-[#0F2C59] text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
@@ -303,25 +276,6 @@ const Header = () => {
               </Link>
             </div>
           </div>
-
-          {/* Mobile Search Input */}
-          <AnimatePresence>
-            {isSearchOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="md:hidden mt-3"
-              >
-                <input
-                  type="text"
-                  placeholder="جستجو در محصولات..."
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#0F2C59] focus:ring-1 focus:ring-[#0F2C59]/30 text-sm placeholder-gray-400"
-                  dir="rtl"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* Mobile Menu Slide-in Panel */}

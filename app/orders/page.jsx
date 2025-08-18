@@ -1,5 +1,3 @@
-// app/orders/page.jsx - کد کامل:
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -23,6 +21,10 @@ import {
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import InvoiceModal from '../components/InvoiceModal';
+
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -30,6 +32,8 @@ const getStatusColor = (status) => {
       return 'bg-green-100 text-green-800 border-green-200';
     case 'shipped':
       return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800 border-red-200';
     case 'processing':
     case 'paid':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -74,6 +78,18 @@ export default function OrdersPage() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+
+  const handleShowInvoice = (order) => {
+    setSelectedInvoice(order);
+    setShowInvoiceModal(true);
+  };
+
+  const handleCloseInvoice = () => {
+    setShowInvoiceModal(false);
+    setSelectedInvoice(null);
+  };
 
   useEffect(() => {
     // صبر تا auth loading تمام شود
@@ -167,34 +183,154 @@ export default function OrdersPage() {
     }
   };
 
-  const downloadInvoice = async (orderId) => {
+  const handleCancelOrder = async (order) => {
+    toast.info('در حال لغو سفارش...', {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "colored",
+    });
+
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`/api/orders/${orderId}/invoice`, {
+      // ارسال orderId واقعی (عددی) نه شماره نمایشی
+      const response = await fetch(`/api/orders/cancel`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ orderId: order.orderId }) // استفاده از orderId نه id
       });
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `invoice-${orderId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast.success('سفارش با موفقیت لغو شد!', {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+        });
+
+        // به‌روزرسانی لیست سفارشات
+        fetchOrders();
       } else {
-        alert('خطا در دانلود فاکتور');
+        throw new Error(result.error || result.details || 'خطای نامشخص');
       }
     } catch (error) {
-      console.error('خطا در دانلود فاکتور:', error);
-      alert('خطا در دانلود فاکتور');
+      console.error('❌ خطا در لغو سفارش:', error);
+      toast.error(`خطا در لغو سفارش: ${error.message}`, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
     }
   };
+  const handleChangeStatus = async (order, newStatus) => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`/api/orders/change-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ 
+        orderId: order.orderId, 
+        status: newStatus 
+      })
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      toast.success(`وضعیت سفارش به "${newStatus}" تغییر کرد!`, {
+        position: "top-right",
+        autoClose: 3000,
+        theme: "colored",
+      });
+
+      fetchOrders();
+    } else {
+      throw new Error(result.error || 'خطای نامشخص');
+    }
+  } catch (error) {
+    toast.error(`خطا در تغییر وضعیت: ${error.message}`, {
+      position: "top-right",
+      autoClose: 3000,
+      theme: "colored",
+    });
+  }
+};
+
+  const handleRestoreOrder = async (order) => {
+    toast.info('در حال بازگردانی سفارش...', {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "colored",
+    });
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`/api/orders/restore`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ orderId: order.orderId })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        toast.success('سفارش با موفقیت بازگردانی شد!', {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+        });
+
+        // به‌روزرسانی لیست سفارشات
+        fetchOrders();
+      } else {
+        throw new Error(result.error || result.details || 'خطای نامشخص');
+      }
+    } catch (error) {
+      console.error('❌ خطا در بازگردانی سفارش:', error);
+      toast.error(`خطا در بازگردانی سفارش: ${error.message}`, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+    }
+  };
+
 
   const toggleOrderDetails = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -246,7 +382,7 @@ export default function OrdersPage() {
   return (
     <>
       <Header />
-      
+      <ToastContainer />
       <div className="flex flex-col min-h-screen bg-white">
         {/* Hero Section */}
         <section className="relative py-24 bg-[#0F2C59] overflow-hidden">
@@ -401,6 +537,7 @@ export default function OrdersPage() {
                           {order.total?.toLocaleString()} تومان
                         </p>
                         <div className="flex gap-2 flex-wrap">
+                          {/* دکمه پرداخت برای سفارشات در انتظار */}
                           {order.status === 'pending' && (
                             <button
                               onClick={() => handlePayment(order.orderId, order.total)}
@@ -410,6 +547,8 @@ export default function OrdersPage() {
                               پرداخت
                             </button>
                           )}
+
+                          {/* دکمه مشاهده جزئیات */}
                           <button
                             onClick={() => toggleOrderDetails(order.id)}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm"
@@ -417,15 +556,59 @@ export default function OrdersPage() {
                             <Eye size={16} />
                             {expandedOrder === order.id ? 'بستن جزئیات' : 'مشاهده جزئیات'}
                           </button>
-                          {(order.status === 'paid' || order.status === 'delivered') && (
+                          {/* دکمه نمایش فاکتور */}
+                          {(order.status === 'paid' || order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered') && (
                             <button 
-                              onClick={() => downloadInvoice(order.orderId)}
+                              onClick={() => handleShowInvoice(order)}
                               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 text-sm"
                             >
                               <Download size={16} />
-                              دانلود فاکتور
+                              مشاهده فاکتور
                             </button>
                           )}
+                          {/* دکمه لغو سفارش یا بازگردانی */}
+                          {order.status === 'cancelled' ? (
+                            <button
+                              onClick={() => handleRestoreOrder(order)}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
+                            >
+                              <RefreshCw size={16} />
+                              بازگردانی سفارش
+                            </button>
+                          ) : order.status !== 'delivered' && (
+                            <button
+                              onClick={() => handleCancelOrder(order)}
+                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm"
+                            >
+                              <XCircle size={16} />
+                              لغو سفارش
+                            </button>
+                          )}
+
+                          {/* دکمه‌های تست برای تغییر وضعیت */}
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleChangeStatus(order, 'paid')}
+                              className="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600"
+                              title="تست: تغییر به پرداخت شده"
+                            >
+                              💳
+                            </button>
+                            <button
+                              onClick={() => handleChangeStatus(order, 'shipped')}
+                              className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                              title="تست: تغییر به در حال ارسال"
+                            >
+                              🚚
+                            </button>
+                            <button
+                              onClick={() => handleChangeStatus(order, 'delivered')}
+                              className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
+                              title="تست: تغییر به تحویل شده"
+                            >
+                              ✅
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -584,6 +767,12 @@ export default function OrdersPage() {
           </div>
         </main>
       </div>
+      {/* در انتهای return اضافه کن */}
+      <InvoiceModal 
+        isOpen={showInvoiceModal}
+        onClose={handleCloseInvoice}
+        order={selectedInvoice}
+      />
     </>
   );
 }

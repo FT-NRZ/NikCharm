@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
-import prisma from '../../../../lib/prisma'
 import bcrypt from 'bcryptjs'
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 // تغییر import nodemailer
 const nodemailer = require('nodemailer')
 

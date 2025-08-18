@@ -1,6 +1,11 @@
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'react-toastify';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
 
 const AuthContext = createContext()
 
@@ -109,16 +114,36 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('user', JSON.stringify(data.user))
             console.log('✅ User verified with server:', data.user)
           } else {
-            console.log('❌ Server verification failed:', data.message)
-            // اگر سرور token را رد کرد، پاک کن
-            handleLogoutInternal()
+            // اگر سرور token را رد کرد، پاک کن و پیام بده
+            toast.error('دوباره وارد حساب کاربری خود شوید', {
+              position: "top-right",
+              autoClose: 4000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              theme: "colored",
+            });
+            handleLogoutInternal();
+            router.push('/login');
           }
+        } else if (response.status === 401) {
+          // اگر توکن منقضی یا نامعتبر بود
+          toast.error('دوباره وارد حساب کاربری خود شوید', {
+            position: "top-right",
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            theme: "colored",
+          });
+          handleLogoutInternal();
+          router.push('/login');
         } else {
-          console.log('⚠️ Server verification request failed, keeping localStorage data')
           // اگر سرور در دسترس نیست، از localStorage استفاده کن
         }
       } catch (verifyError) {
-        console.log('⚠️ Network error during verification, using localStorage:', verifyError.message)
         // خطای شبکه، از localStorage استفاده کن
       }
 

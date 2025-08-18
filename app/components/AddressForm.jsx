@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 import { 
   MapPinIcon, 
   HomeIcon, 
@@ -12,33 +13,34 @@ import {
 } from '@heroicons/react/24/outline';
 
 const AddressDropdown = ({ onAddressSelect }) => {
-  const [provinces, setProvinces] = useState([]); // ⭐ تغییر از states به provinces
+  const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
-  const [selectedProvince, setSelectedProvince] = useState(''); // ⭐ تغییر از selectedState
+  const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
-  const [loadingProvinces, setLoadingProvinces] = useState(false); // ⭐ تغییر نام
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
 
   // دریافت لیست استان‌ها
   useEffect(() => {
-    const fetchProvinces = async () => { // ⭐ تغییر نام function
+    const fetchProvinces = async () => {
       setLoadingProvinces(true);
       try {
-        // ⭐ تغییر از /api/states به /api/provinces
         const response = await fetch('/api/provinces');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const result = await response.json();
-        console.log('🏛️ استان‌های دریافتی:', result); // برای debug
+        console.log('🏛️ استان‌های دریافتی:', result);
         
         if (result.success && Array.isArray(result.data)) {
           setProvinces(result.data);
           console.log(`✅ ${result.data.length} استان بارگذاری شد`);
         } else {
           console.error('❌ خطا در ساختار داده‌های استان‌ها:', result);
+          toast.error('خطا در بارگذاری استان‌ها');
         }
       } catch (error) {
         console.error('❌ خطا در دریافت استان‌ها:', error);
+        toast.error('خطا در اتصال به سرور برای دریافت استان‌ها');
       } finally {
         setLoadingProvinces(false);
       }
@@ -56,19 +58,20 @@ const AddressDropdown = ({ onAddressSelect }) => {
         setSelectedCity('');
 
         try {
-          // ⭐ تغییر از /api/cities/${selectedState} به query parameter
           const response = await fetch(`/api/cities?province_id=${selectedProvince}`);
           const result = await response.json();
-          console.log('🏙️ شهرهای دریافتی:', result); // برای debug
+          console.log('🏙️ شهرهای دریافتی:', result);
           
           if (result.success && Array.isArray(result.data)) {
             setCities(result.data);
             console.log(`✅ ${result.data.length} شهر بارگذاری شد`);
           } else {
             console.error('❌ خطا در ساختار داده‌های شهرها:', result);
+            toast.error('خطا در بارگذاری شهرها');
           }
         } catch (error) {
           console.error('❌ خطا در دریافت شهرها:', error);
+          toast.error('خطا در اتصال به سرور برای دریافت شهرها');
         } finally {
           setLoadingCities(false);
         }
@@ -79,12 +82,12 @@ const AddressDropdown = ({ onAddressSelect }) => {
       setCities([]);
       setSelectedCity('');
     }
-  }, [selectedProvince]); // ⭐ تغییر dependency
+  }, [selectedProvince]);
 
   // ارسال اطلاعات انتخاب شده به والد
   useEffect(() => {
     if (selectedProvince && selectedCity) {
-      const selectedProvinceData = provinces.find((p) => p.id == selectedProvince); // ⭐ تغییر نام متغیر
+      const selectedProvinceData = provinces.find((p) => p.id == selectedProvince);
       const selectedCityData = cities.find((c) => c.id == selectedCity);
 
       if (selectedProvinceData && selectedCityData) {
@@ -94,9 +97,9 @@ const AddressDropdown = ({ onAddressSelect }) => {
         });
         
         onAddressSelect({
-          state: selectedProvinceData, // برای سازگاری با کد قبلی
+          state: selectedProvinceData,
           city: selectedCityData,
-          province: selectedProvinceData // اضافه کردن province برای وضوح
+          province: selectedProvinceData
         });
       }
     }
@@ -125,7 +128,6 @@ const AddressDropdown = ({ onAddressSelect }) => {
             </option>
           ))}
         </select>
-        {/* نمایش تعداد استان‌ها */}
         {provinces.length > 0 && (
           <p className="text-xs text-gray-500 mt-1">
             {provinces.length} استان موجود
@@ -158,7 +160,6 @@ const AddressDropdown = ({ onAddressSelect }) => {
             </option>
           ))}
         </select>
-        {/* نمایش تعداد شهرها */}
         {cities.length > 0 && (
           <p className="text-xs text-gray-500 mt-1">
             {cities.length} شهر موجود
@@ -191,7 +192,6 @@ const AddressForm = ({ onSubmit, showSavedAddresses = true }) => {
   });
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
 
   const handleAddressSelect = useCallback((location) => {
     console.log('📍 مکان انتخاب شده:', location);
@@ -200,30 +200,27 @@ const AddressForm = ({ onSubmit, showSavedAddresses = true }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage({ type: '', text: '' });
 
     console.log('📤 شروع ارسال فرم...', { selectedLocation, addressData });
 
     if (!selectedLocation) {
-      setMessage({ type: 'error', text: 'لطفاً استان و شهر را انتخاب کنید' });
+      toast.error('لطفاً استان و شهر را انتخاب کنید');
       return;
     }
 
     if (!addressData.address.trim() || !addressData.phone_number.trim()) {
-      setMessage({ type: 'error', text: 'لطفاً فیلدهای ضروری را پر کنید' });
+      toast.error('لطفاً فیلدهای ضروری را پر کنید');
       return;
     }
 
-    // ⭐ اصلاح ساختار داده‌های ارسالی
+    // اصلاح ساختار داده‌های ارسالی
     const finalData = {
       address: addressData.address.trim(),
       house_no: addressData.house_no || null,
       phone_number: addressData.phone_number.trim(),
       postalcode: addressData.postalcode || null,
-      // ⭐ استفاده از province_id و city_id (API جدید)
       state_id: selectedLocation.state?.id || selectedLocation.province?.id,
       city_id: selectedLocation.city.id,
-      // ⭐ اضافه کردن نام‌ها برای نمایش
       city: selectedLocation.city.name,
       state_name: selectedLocation.state?.name || selectedLocation.province?.name
     };
@@ -235,9 +232,14 @@ const AddressForm = ({ onSubmit, showSavedAddresses = true }) => {
     try {
       if (onSubmit) {
         await onSubmit(finalData);
-        setMessage({ 
-          type: 'success', 
-          text: 'آدرس با موفقیت ثبت شد!' 
+        
+        toast.success('آدرس با موفقیت ثبت شد!', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
         });
         
         // پاک کردن فرم
@@ -251,9 +253,13 @@ const AddressForm = ({ onSubmit, showSavedAddresses = true }) => {
       }
     } catch (error) {
       console.error('❌ خطا در ثبت آدرس:', error);
-      setMessage({ 
-        type: 'error', 
-        text: 'خطا در ثبت آدرس: ' + (error.message || 'خطای نامشخص')
+      toast.error('خطا در ثبت آدرس: ' + (error.message || 'خطای نامشخص'), {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
       });
     } finally {
       setIsSubmitting(false);
@@ -262,30 +268,6 @@ const AddressForm = ({ onSubmit, showSavedAddresses = true }) => {
 
   return (
     <div className="space-y-6" style={{ fontFamily: 'Vazirmatn, system-ui, sans-serif', direction: 'rtl' }}>
-      {/* نمایش پیام */}
-      {message.text && (
-        <div className={`p-4 rounded-xl border-2 ${
-          message.type === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800' 
-            : 'bg-red-50 border-red-200 text-red-800'
-        } flex items-center justify-between`}>
-          <div className="flex items-center">
-            {message.type === 'success' ? (
-              <CheckCircleIcon className="w-5 h-5 ml-2" />
-            ) : (
-              <XMarkIcon className="w-5 h-5 ml-2" />
-            )}
-            <p className="font-medium">{message.text}</p>
-          </div>
-          <button 
-            onClick={() => setMessage({ type: '', text: '' })}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-
       {/* فرم آدرس جدید */}
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
         <div className="bg-gradient-to-r from-[#0F2C59] to-[#0F2C59]/80 px-6 py-4">

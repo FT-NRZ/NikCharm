@@ -27,6 +27,11 @@ export default function ProductsPage() {
 
   const searchParams = useSearchParams();
 
+  // تابع برای تعیین کلاس‌های grid بر اساس اندازه صفحه
+  const getGridClasses = () => {
+    return "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-4 gap-4 md:gap-5 justify-items-center";
+  };
+
   useEffect(() => {
     const catParam = searchParams.get("category");
     if (catParam) {
@@ -408,10 +413,10 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            {/* Products Grid */}
+            {/* Products Grid - اضافه کردن max-width برای هر کارت */}
             <div className="w-full">
               {filteredProducts.filter(product => product.stock_quantity > 0).length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                <div className={getGridClasses()}>
                   {filteredProducts
                     .filter(product => product.stock_quantity > 0)
                     .map((product) => (
@@ -420,6 +425,7 @@ export default function ProductsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
+                        className="w-full max-w-sm mx-auto"
                       >
                         {isMobile ? (
                           <MobileProductCard product={product} />
@@ -459,7 +465,7 @@ export default function ProductsPage() {
           </div>
         </main>
 
-        {/* Mobile Filter Panel */}
+        {/* Mobile Filter Panel - بقیه کد بدون تغییر */}
         <AnimatePresence>
           {isFilterOpen && (
             <div dir="rtl" className="fixed left-0 top-0 inset-0 z-50 flex">

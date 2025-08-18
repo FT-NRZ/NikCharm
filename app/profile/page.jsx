@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useRouter } from 'next/navigation'
+import { toast } from 'react-toastify'
+import Header from "../components/Header"
 import AddressForm from '../components/AddressForm'
 import {
   UserIcon,
@@ -78,14 +80,17 @@ const ProfilePage = () => {
         } else {
           console.error('❌ خطا از سرور:', result.error);
           setUserAddresses([]);
+          toast.error('خطا در بارگذاری آدرس‌ها');
         }
       } else {
         console.error('❌ HTTP error:', response.status);
         setUserAddresses([]);
+        toast.error('خطا در اتصال به سرور');
       }
     } catch (error) {
       console.error('❌ خطا در بارگذاری آدرس‌ها:', error);
       setUserAddresses([]);
+      toast.error('خطا در بارگذاری آدرس‌ها');
     } finally {
       setLoadingAddresses(false);
     }
@@ -106,7 +111,7 @@ const ProfilePage = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        alert('لطفا دوباره وارد شوید');
+        toast.error('لطفا دوباره وارد شوید');
         return;
       }
 
@@ -129,7 +134,8 @@ const ProfilePage = () => {
         
         setUserAddresses(prev => [data.data, ...prev]);
         setShowAddressForm(false);
-        alert('آدرس با موفقیت اضافه شد!');
+        
+        // toast از AddressForm.jsx خودش نمایش داده می‌شود
         
         setTimeout(() => {
           const addressSection = document.getElementById('addresses');
@@ -143,17 +149,52 @@ const ProfilePage = () => {
         
       } else {
         console.error('❌ خطا از سرور:', data.error || data.message);
-        alert(data.error || data.message || 'خطا در ثبت آدرس');
+        toast.error(data.error || data.message || 'خطا در ثبت آدرس');
       }
     } catch (error) {
       console.error('❌ خطا در درخواست POST:', error);
-      alert('خطا در ثبت آدرس');
+      toast.error('خطا در ثبت آدرس');
     }
   };
 
   // حذف آدرس
   const handleDeleteAddress = async (addressId) => {
-    if (!confirm('آیا از حذف این آدرس اطمینان دارید؟')) return;
+    const result = await new Promise((resolve) => {
+      toast.warn(
+        <div>
+          <p>آیا از حذف این آدرس اطمینان دارید؟</p>
+          <div className="flex gap-2 mt-2">
+            <button 
+              onClick={() => {
+                toast.dismiss();
+                resolve(true);
+              }}
+              className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+            >
+              حذف
+            </button>
+            <button 
+              onClick={() => {
+                toast.dismiss();
+                resolve(false);
+              }}
+              className="bg-gray-500 text-white px-3 py-1 rounded text-sm"
+            >
+              انصراف
+            </button>
+          </div>
+        </div>,
+        {
+          position: "top-center",
+          autoClose: false,
+          hideProgressBar: true,
+          closeOnClick: false,
+          closeButton: false,
+        }
+      );
+    });
+
+    if (!result) return;
     
     console.log('🗑️ حذف آدرس:', addressId);
     
@@ -174,50 +215,50 @@ const ProfilePage = () => {
         if (result.success) {
           console.log('✅ آدرس حذف شد');
           setUserAddresses(prev => prev.filter(addr => addr.id !== addressId));
-          alert('آدرس با موفقیت حذف شد');
+          toast.success('آدرس با موفقیت حذف شد');
         } else {
-          alert(result.error || 'خطا در حذف آدرس');
+          toast.error(result.error || 'خطا در حذف آدرس');
         }
       } else {
-        alert('خطا در حذف آدرس');
+        toast.error('خطا در حذف آدرس');
       }
     } catch (error) {
       console.error('❌ خطا در حذف آدرس:', error);
-      alert('خطا در حذف آدرس');
+      toast.error('خطا در حذف آدرس');
     }
   };
 
   const handleSave = async () => {
-  console.log('📤 ارسال داده‌ها:', editData) // ⭐ اضافه کردن log
-  setUpdating(true)
-  try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/auth/update-profile', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(editData)
-    })
+    console.log('📤 ارسال داده‌ها:', editData)
+    setUpdating(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/auth/update-profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editData)
+      })
 
-    const data = await response.json()
-    console.log('📥 پاسخ دریافتی:', data) // ⭐ اضافه کردن log
+      const data = await response.json()
+      console.log('📥 پاسخ دریافتی:', data)
 
-    if (data.success) {
-      updateUser(data.user)
-      setIsEditing(false)
-      alert('پروفایل با موفقیت بروزرسانی شد') // ⭐ اضافه کردن تأیید
-    } else {
-      alert(data.message || 'خطا در بروزرسانی پروفایل')
+      if (data.success) {
+        updateUser(data.user)
+        setIsEditing(false)
+        toast.success('پروفایل با موفقیت بروزرسانی شد')
+      } else {
+        toast.error(data.message || 'خطا در بروزرسانی پروفایل')
+      }
+    } catch (error) {
+      console.error('خطا در بروزرسانی:', error)
+      toast.error('خطا در بروزرسانی پروفایل')
+    } finally {
+      setUpdating(false)
     }
-  } catch (error) {
-    console.error('خطا در بروزرسانی:', error)
-    alert('خطا در بروزرسانی پروفایل')
-  } finally {
-    setUpdating(false)
   }
-}
 
   const handleCancel = () => {
     setEditData({
@@ -242,9 +283,10 @@ const ProfilePage = () => {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8" style={{ fontFamily: 'Vazirmatn, system-ui, sans-serif', direction: 'rtl' }}>
+    <>
+      <Header />
+      <div className="min-h-screen bg-gray-50 py-8" style={{ fontFamily: 'Vazirmatn, system-ui, sans-serif', direction: 'rtl' }}>
       <div className="max-w-6xl mx-auto px-6">
-        
         {/* Header Section */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
@@ -252,7 +294,7 @@ const ProfilePage = () => {
           className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 space-x-reverse">
+            <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-[#0F2C59] rounded-lg flex items-center justify-center">
                 <UserIcon className="w-8 h-8 text-white" />
               </div>
@@ -265,7 +307,7 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className="flex space-x-3 space-x-reverse">
+            <div className="flex space-x-3">
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
@@ -524,14 +566,6 @@ const ProfilePage = () => {
                 </button>
                 
                 <button
-                  onClick={() => router.push('/settings')}
-                  className="w-full flex items-center p-3 text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-                >
-                  <Cog6ToothIcon className="w-4 h-4 ml-3" />
-                  <span className="text-sm">تنظیمات</span>
-                </button>
-                
-                <button
                   onClick={logout}
                   className="w-full flex items-center p-3 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                 >
@@ -544,6 +578,7 @@ const ProfilePage = () => {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

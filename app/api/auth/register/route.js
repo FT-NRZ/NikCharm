@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
-import prisma from '../../../../lib/prisma'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nikcharm-secret-key-2024'
 
